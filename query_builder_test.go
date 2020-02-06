@@ -1,9 +1,11 @@
 package query_builder
 
 import (
+	"fmt"
 	"query-builder/query_operator"
 	"reflect"
 	"testing"
+	"time"
 )
 
 type User struct {
@@ -177,4 +179,70 @@ func Test_QueryBuilderIsImmutable(t *testing.T) {
 		t.Fail()
 		t.Log(qb, qb2, " are deepEqual true. query build is not immutable.")
 	}
+}
+
+//ex Tag
+type SearchMachinesParameter struct {
+	MachineNumber *int       `search:"machine_number" operator:"eq"`
+	MachineName   *string    `search:"machine_name" operator:"eq"`
+	BuyDateFrom   *time.Time `search:"buy_date" operator:"ge"`
+	BuyDateTo     *time.Time `search:"buy_date" operator:"lt"`
+	PriceFrom     *time.Time `search:"price" operator:"gt"`
+	PriceTo       *time.Time `search:"price" operator:"le"`
+}
+
+func Test_ChangeOperatorByTag(t *testing.T) {
+	param := make(map[string]map[string]string)
+	param["machine_number"] = map[string]string{
+		"target":   "machine_number",
+		"operator": "eq",
+	}
+	param["machine_name"] = map[string]string{
+		"target":   "machine_name",
+		"operator": "eq",
+	}
+	param["buy_date_from"] = map[string]string{
+		"target":   "buy_date",
+		"operator": "ge",
+	}
+	param["buy_date_to"] = map[string]string{
+		"target":   "buy_date",
+		"operator": "lt",
+	}
+	param["price_from"] = map[string]string{
+		"target":   "price",
+		"operator": "gt",
+	}
+	param["price_to"] = map[string]string{
+		"target":   "price",
+		"operator": "le",
+	}
+
+	qb := NewQueryBuilder().Table("machine")
+	for bindName, info := range param {
+		var op string
+		switch info["operator"] {
+		case "eq":
+			op = query_operator.Equal
+		case "lt":
+			op = query_operator.LessThan
+		case "le":
+			op = query_operator.LessEqual
+		case "gt":
+			op = query_operator.GraterThan
+		case "ge":
+			op = query_operator.GraterEqual
+		case "not":
+			op = query_operator.Not
+		}
+		qb = qb.Where(info["target"], op, bindName)
+	}
+	fmt.Println(qb.UseNamedPlaceholder().Build())
+}
+
+func Test_WhereMulti(t *testing.T) {
+	qb := NewQueryBuilder().Table("machine").
+		UseNamedPlaceholder().
+		WhereMultiByParam(SearchMachinesParameter{})
+	fmt.Println(qb.Build())
 }

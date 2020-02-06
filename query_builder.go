@@ -1,6 +1,8 @@
 package query_builder
 
 import (
+	"query-builder/parameter_parser"
+	"query-builder/query_operator"
 	"reflect"
 	"strings"
 )
@@ -104,6 +106,31 @@ func (qb *QueryBuilder) Where(column, operator string, bind ...string) *QueryBui
 		"operator": operator,
 		"bind":     bd,
 	})
+	return copied
+}
+
+func (qb *QueryBuilder) WhereMultiByParam(param interface{}) *QueryBuilder {
+	copied := qb.copy()
+
+	paramMap := parameter_parser.NewParameterParser(param).ParseBindMap()
+	for bindName, info := range paramMap {
+		var op string
+		switch info["operator"] {
+		case "eq":
+			op = query_operator.Equal
+		case "lt":
+			op = query_operator.LessThan
+		case "le":
+			op = query_operator.LessEqual
+		case "gt":
+			op = query_operator.GraterThan
+		case "ge":
+			op = query_operator.GraterEqual
+		case "not":
+			op = query_operator.Not
+		}
+		copied = copied.Where(info["target"], op, bindName)
+	}
 	return copied
 }
 
