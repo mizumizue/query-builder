@@ -6,9 +6,10 @@ import (
 )
 
 type User struct {
-	Name string `db:"name" table:"users"`
-	Age  int    `db:"age" table:"users"`
-	Sex  string `db:"sex" table:"users"`
+	UserID string `db:"user_id" table:"users"`
+	Name   string `db:"name" table:"users"`
+	Age    int    `db:"age" table:"users"`
+	Sex    string `db:"sex" table:"users"`
 }
 
 func Test_QueryBuilder(t *testing.T) {
@@ -22,7 +23,7 @@ func Test_QueryBuilder(t *testing.T) {
 
 func Test_QueryBuilderModel(t *testing.T) {
 	q := NewQueryBuilder().Table("users").Model(User{}).Build()
-	expected := "SELECT users.name, users.age, users.sex FROM users;"
+	expected := "SELECT users.user_id, users.name, users.age, users.sex FROM users;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
 		t.Fail()
@@ -131,6 +132,26 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 	expected3 := "SELECT users.* FROM users WHERE name = :name AND age >= :age1 AND age <= :age2 AND sex != :sex1 AND age < :age3 AND age > :age4;"
 	if q3 != expected3 {
 		t.Logf("expected: %s, acctual: %s", expected3, q3)
+		t.Fail()
+	}
+}
+
+func Test_QueryBuilderJoin(t *testing.T) {
+	q := NewQueryBuilder().Table("users").UseNamedPlaceholder().Join(LeftJoin, "tasks", "user_id").Build()
+	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+
+	q2 := NewQueryBuilder().Table("users").UseNamedPlaceholder().
+		Join(LeftJoin, "tasks", "user_id").
+		Join(LeftJoin, "subtasks", "task_id", "tasks").
+		Build()
+
+	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id LEFT JOIN subtasks ON tasks.task_id = subtasks.task_id;"
+	if q2 != expected2 {
+		t.Logf("expected: %s acctual: %s", expected2, q2)
 		t.Fail()
 	}
 }

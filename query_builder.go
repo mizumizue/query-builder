@@ -8,6 +8,7 @@ import (
 type QueryBuilder struct {
 	tableName       string
 	selects         []string
+	joins           []map[string]string
 	whereConditions []map[string]string
 	limit           bool
 	offset          bool
@@ -17,6 +18,11 @@ type QueryBuilder struct {
 const (
 	Question = iota
 	Named
+)
+
+const (
+	LeftJoin  = "LEFT JOIN"
+	RightJoin = "RIGHT JOIN"
 )
 
 func NewQueryBuilder() *QueryBuilder {
@@ -64,6 +70,20 @@ func (qb *QueryBuilder) Model(model interface{}) *QueryBuilder {
 	return qb
 }
 
+func (qb *QueryBuilder) Join(joinType, joinTable, onField string, otherTable ...string) *QueryBuilder {
+	m := make(map[string]string)
+	m["type"] = joinType
+	m["table"] = joinTable
+	m["onField"] = onField
+
+	if len(otherTable) > 0 && otherTable[0] != "" {
+		m["otherTable"] = otherTable[0]
+	}
+
+	qb.joins = append(qb.joins, m)
+	return qb
+}
+
 func (qb *QueryBuilder) Where(column, operator string, bind ...string) *QueryBuilder {
 	var bd string
 	if len(bind) == 0 {
@@ -101,6 +121,17 @@ func (qb *QueryBuilder) Build() string {
 	}
 	q += " FROM " + qb.tableName + " "
 
+	if len(qb.joins) > 0 {
+		for _, join := range qb.joins {
+			if join["otherTable"] != "" {
+				q += join["type"] + " " + join["table"] + " ON " + join["otherTable"] + "." + join["onField"] + " = " + join["table"] + "." + join["onField"] + " "
+			} else {
+				q += join["type"] + " " + join["table"] + " ON " + qb.tableName + "." + join["onField"] + " = " + join["table"] + "." + join["onField"] + " "
+			}
+
+		}
+	}
+
 	if len(qb.whereConditions) > 0 {
 		q += "WHERE "
 		for _, condition := range qb.whereConditions {
@@ -111,7 +142,7 @@ func (qb *QueryBuilder) Build() string {
 			}
 
 		}
-		q = strings.TrimRight(q, "AND ")
+		q = strings.TrimRight(q, " AND") + " "
 	}
 
 	if qb.limit {
