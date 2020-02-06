@@ -2,6 +2,7 @@ package query_builder
 
 import (
 	"query-builder/query_operator"
+	"reflect"
 	"testing"
 )
 
@@ -153,5 +154,27 @@ func Test_QueryBuilderJoin(t *testing.T) {
 	if q2 != expected2 {
 		t.Logf("expected: %s acctual: %s", expected2, q2)
 		t.Fail()
+	}
+}
+
+func Test_QueryBuilderWhereOperator(t *testing.T) {
+	q := NewQueryBuilder().Table("users").
+		UseNamedPlaceholder().
+		Join(LeftJoin, "tasks", "user_id").
+		Build()
+	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+}
+
+func Test_QueryBuilderIsImmutable(t *testing.T) {
+	qb := NewQueryBuilder().Table("users").Offset()
+	qb2 := qb.Table("tasks")
+
+	if reflect.DeepEqual(qb, qb2) {
+		t.Fail()
+		t.Log(qb, qb2, " are deepEqual true. query build is not immutable.")
 	}
 }

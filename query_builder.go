@@ -32,24 +32,28 @@ func NewQueryBuilder() *QueryBuilder {
 }
 
 func (qb *QueryBuilder) UseNamedPlaceholder() *QueryBuilder {
-	qb.placeholder = Named
-	return qb
+	copied := qb.copy()
+	copied.placeholder = Named
+	return copied
 }
 
 func (qb *QueryBuilder) Table(tableName string) *QueryBuilder {
-	qb.tableName = tableName
-	return qb
+	copied := qb.copy()
+	copied.tableName = tableName
+	return copied
 }
 
 func (qb *QueryBuilder) Select(columns ...string) *QueryBuilder {
+	copied := qb.copy()
 	for _, column := range columns {
-		qb.selects = append(qb.selects, column)
+		copied.selects = append(copied.selects, column)
 	}
-	return qb
+	return copied
 }
 
 // db・tableタグを見て、FieldをSelect対象としてSet
 func (qb *QueryBuilder) Model(model interface{}) *QueryBuilder {
+	copied := qb.copy()
 	t := reflect.TypeOf(model)
 
 	if t.Kind() == reflect.Ptr {
@@ -64,13 +68,15 @@ func (qb *QueryBuilder) Model(model interface{}) *QueryBuilder {
 		dbTag := field.Tag.Get("db")
 		tableTag := field.Tag.Get("table")
 		if dbTag != "" && tableTag == qb.tableName {
-			qb.selects = append(qb.selects, dbTag)
+			copied.selects = append(copied.selects, dbTag)
 		}
 	}
-	return qb
+	return copied
 }
 
 func (qb *QueryBuilder) Join(joinType, joinTable, onField string, otherTable ...string) *QueryBuilder {
+	copied := qb.copy()
+
 	m := make(map[string]string)
 	m["type"] = joinType
 	m["table"] = joinTable
@@ -80,33 +86,37 @@ func (qb *QueryBuilder) Join(joinType, joinTable, onField string, otherTable ...
 		m["otherTable"] = otherTable[0]
 	}
 
-	qb.joins = append(qb.joins, m)
-	return qb
+	copied.joins = append(copied.joins, m)
+	return copied
 }
 
 func (qb *QueryBuilder) Where(column, operator string, bind ...string) *QueryBuilder {
+	copied := qb.copy()
+
 	var bd string
 	if len(bind) == 0 {
 		bd = column
 	} else {
 		bd = bind[0]
 	}
-	qb.whereConditions = append(qb.whereConditions, map[string]string{
+	copied.whereConditions = append(copied.whereConditions, map[string]string{
 		"column":   column,
 		"operator": operator,
 		"bind":     bd,
 	})
-	return qb
+	return copied
 }
 
 func (qb *QueryBuilder) Limit() *QueryBuilder {
-	qb.limit = true
-	return qb
+	copied := qb.copy()
+	copied.limit = true
+	return copied
 }
 
 func (qb *QueryBuilder) Offset() *QueryBuilder {
-	qb.offset = true
-	return qb
+	copied := qb.copy()
+	copied.offset = true
+	return copied
 }
 
 func (qb *QueryBuilder) Build() string {
@@ -162,4 +172,16 @@ func (qb *QueryBuilder) Build() string {
 	}
 
 	return strings.TrimRight(q, " ") + ";"
+}
+
+func (qb *QueryBuilder) copy() *QueryBuilder {
+	return &QueryBuilder{
+		tableName:       qb.tableName,
+		selects:         qb.selects,
+		joins:           qb.joins,
+		whereConditions: qb.whereConditions,
+		limit:           qb.limit,
+		offset:          qb.offset,
+		placeholder:     qb.placeholder,
+	}
 }
