@@ -1,6 +1,7 @@
 package query_builder
 
 import (
+	"fmt"
 	"query-builder/parameter_parser"
 	"query-builder/query_operator"
 	"reflect"
@@ -8,6 +9,7 @@ import (
 )
 
 type QueryBuilder struct {
+	query           []string
 	tableName       string
 	selects         []string
 	joins           []map[string]string
@@ -94,11 +96,8 @@ func (qb *QueryBuilder) Join(joinType, joinTable, onField string, otherTable ...
 
 func (qb *QueryBuilder) Where(column, operator string, bind ...string) *QueryBuilder {
 	copied := qb.copy()
-
-	var bd string
-	if len(bind) == 0 {
-		bd = column
-	} else {
+	bd := column
+	if len(bind) != 0 {
 		bd = bind[0]
 	}
 	copied.whereConditions = append(copied.whereConditions, map[string]string{
@@ -147,58 +146,105 @@ func (qb *QueryBuilder) Offset() *QueryBuilder {
 }
 
 func (qb *QueryBuilder) Build() string {
-	q := "SELECT "
-	if len(qb.selects) == 0 {
-		q += qb.tableName + ".*"
-	} else {
-		for _, column := range qb.selects {
-			q += qb.tableName + "." + column + ", "
-		}
-		q = strings.TrimRight(q, ", ")
-	}
-	q += " FROM " + qb.tableName + " "
+	copied := qb.copy()
+	copied.query = append(copied.query, qb.getSelectParagraphs()...)
 
 	if len(qb.joins) > 0 {
-		for _, join := range qb.joins {
-			if join["otherTable"] != "" {
-				q += join["type"] + " " + join["table"] + " ON " + join["otherTable"] + "." + join["onField"] + " = " + join["table"] + "." + join["onField"] + " "
-			} else {
-				q += join["type"] + " " + join["table"] + " ON " + qb.tableName + "." + join["onField"] + " = " + join["table"] + "." + join["onField"] + " "
-			}
-
-		}
+		copied.query = append(copied.query, qb.getJoinParagraphs()...)
 	}
 
 	if len(qb.whereConditions) > 0 {
-		q += "WHERE "
-		for _, condition := range qb.whereConditions {
-			if qb.placeholder == Named {
-				q += condition["column"] + " " + condition["operator"] + " :" + condition["bind"] + " AND "
-			} else {
-				q += condition["column"] + " " + condition["operator"] + " ? AND "
-			}
-
-		}
-		q = strings.TrimRight(q, " AND") + " "
+		copied.query = append(copied.query, qb.getWhereParagraphs()...)
 	}
 
 	if qb.limit {
-		if qb.placeholder == Named {
-			q += "LIMIT :limit "
-		} else {
-			q += "LIMIT ? "
-		}
+		copied.query = append(copied.query, qb.getLimitParagraph())
 	}
 
 	if qb.offset {
-		if qb.placeholder == Named {
-			q += "OFFSET :offset "
-		} else {
-			q += "OFFSET ? "
-		}
+		copied.query = append(copied.query, qb.getOffsetParagraph())
 	}
 
-	return strings.TrimRight(q, " ") + ";"
+	return strings.TrimRight(strings.Join(copied.query, " "), "") + ";"
+}
+
+func (qb *QueryBuilder) getSelectParagraphs() []string {
+	paragraph := make([]string, 0, 0)
+	paragraph = append(paragraph, "SELECT")
+
+	if len(qb.selects) == 0 {
+		paragraph = append(paragraph, qb.tableName+".*")
+		paragraph = append(paragraph, "FROM", qb.tableName)
+		return paragraph
+	}
+
+	format := "%s.%s,"
+	for index, column := range qb.selects {
+		if index == len(qb.selects)-1 {
+			format = strings.TrimRight(format, ",")
+		}
+		paragraph = append(paragraph, fmt.Sprintf(
+			format,
+			qb.tableName,
+			column,
+		))
+	}
+	return append(paragraph, "FROM", qb.tableName)
+}
+
+func (qb *QueryBuilder) getJoinParagraphs() []string {
+	paragraph := make([]string, 0, 0)
+	for _, join := range qb.joins {
+		joinBase := qb.tableName
+		if join["otherTable"] != "" {
+			joinBase = join["otherTable"]
+		}
+
+		paragraph = append(paragraph, fmt.Sprintf(
+			"%s %s ON %s.%s = %s.%s",
+			join["type"],
+			join["table"],
+			joinBase,
+			join["onField"],
+			join["table"],
+			join["onField"],
+		))
+	}
+	return paragraph
+}
+
+func (qb *QueryBuilder) getWhereParagraphs() []string {
+	paragraph := make([]string, 0, 0)
+	paragraph = append(paragraph, "WHERE")
+
+	format := "%s %s %s AND"
+	for index, condition := range qb.whereConditions {
+		if index == len(qb.whereConditions)-1 {
+			format = strings.TrimRight(format, " AND")
+		}
+		bind := "?"
+		if qb.placeholder == Named {
+			bind = ":" + condition["bind"]
+		}
+		paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], bind))
+	}
+	return paragraph
+}
+
+func (qb *QueryBuilder) getLimitParagraph() string {
+	bind := "?"
+	if qb.placeholder == Named {
+		bind = ":limit"
+	}
+	return fmt.Sprintf("LIMIT %s", bind)
+}
+
+func (qb *QueryBuilder) getOffsetParagraph() string {
+	bind := "?"
+	if qb.placeholder == Named {
+		bind = ":offset"
+	}
+	return fmt.Sprintf("OFFSET %s", bind)
 }
 
 func (qb *QueryBuilder) copy() *QueryBuilder {
