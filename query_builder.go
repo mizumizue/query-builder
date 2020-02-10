@@ -14,8 +14,8 @@ type QueryBuilder struct {
 	selects         []string
 	joins           []map[string]string
 	whereConditions []map[string]string
-	limit           bool
-	offset          bool
+	limit           map[string]interface{}
+	offset          map[string]interface{}
 	placeholder     int
 }
 
@@ -108,11 +108,11 @@ func (qb *QueryBuilder) Where(column, operator string, bind ...string) *QueryBui
 	return copied
 }
 
-func (qb *QueryBuilder) WhereMultiByParam(param interface{}) *QueryBuilder {
+func (qb *QueryBuilder) WhereMultiByStruct(src interface{}) *QueryBuilder {
 	copied := qb.copy()
 
-	paramMap := parameter_parser.NewParameterParser(param).ParseBindMap()
-	for bindName, info := range paramMap {
+	paramMap := parameter_parser.NewParameterParser(src).ParseBindMap()
+	for _, info := range paramMap {
 		var op string
 		switch info["operator"] {
 		case "eq":
@@ -128,24 +128,42 @@ func (qb *QueryBuilder) WhereMultiByParam(param interface{}) *QueryBuilder {
 		case "not":
 			op = query_operator.Not
 		}
-		copied = copied.Where(info["target"], op, bindName)
+		copied = copied.Where(info["target"], op, info["bind"])
 	}
 	return copied
 }
 
-func (qb *QueryBuilder) Limit() *QueryBuilder {
+func (qb *QueryBuilder) Limit(bind ...string) *QueryBuilder {
+	bd := "limit"
+	if len(bind) != 0 {
+		bd = bind[0]
+	}
 	copied := qb.copy()
-	copied.limit = true
+	copied.limit = map[string]interface{}{
+		"use":  true,
+		"bind": bd,
+	}
 	return copied
 }
 
-func (qb *QueryBuilder) Offset() *QueryBuilder {
+func (qb *QueryBuilder) Offset(bind ...string) *QueryBuilder {
+	bd := "offset"
+	if len(bind) != 0 {
+		bd = bind[0]
+	}
 	copied := qb.copy()
-	copied.offset = true
+	copied.offset = map[string]interface{}{
+		"use":  true,
+		"bind": bd,
+	}
 	return copied
 }
 
 func (qb *QueryBuilder) Build() string {
+	if qb.tableName == "" {
+		panic("target table is empty!!!")
+	}
+
 	copied := qb.copy()
 	copied.query = append(copied.query, qb.getSelectParagraphs()...)
 
@@ -157,11 +175,11 @@ func (qb *QueryBuilder) Build() string {
 		copied.query = append(copied.query, qb.getWhereParagraphs()...)
 	}
 
-	if qb.limit {
+	if qb.limit["use"] != nil && qb.limit["use"].(bool) {
 		copied.query = append(copied.query, qb.getLimitParagraph())
 	}
 
-	if qb.offset {
+	if qb.offset["use"] != nil && qb.offset["use"].(bool) {
 		copied.query = append(copied.query, qb.getOffsetParagraph())
 	}
 
@@ -234,7 +252,7 @@ func (qb *QueryBuilder) getWhereParagraphs() []string {
 func (qb *QueryBuilder) getLimitParagraph() string {
 	bind := "?"
 	if qb.placeholder == Named {
-		bind = ":limit"
+		bind = ":" + qb.limit["bind"].(string)
 	}
 	return fmt.Sprintf("LIMIT %s", bind)
 }
@@ -242,7 +260,7 @@ func (qb *QueryBuilder) getLimitParagraph() string {
 func (qb *QueryBuilder) getOffsetParagraph() string {
 	bind := "?"
 	if qb.placeholder == Named {
-		bind = ":offset"
+		bind = ":" + qb.offset["bind"].(string)
 	}
 	return fmt.Sprintf("OFFSET %s", bind)
 }

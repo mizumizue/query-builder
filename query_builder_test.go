@@ -1,7 +1,7 @@
 package query_builder
 
 import (
-	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"query-builder/query_operator"
 	"reflect"
 	"testing"
@@ -187,62 +187,45 @@ type SearchMachinesParameter struct {
 	MachineName   *string    `search:"machine_name" operator:"eq"`
 	BuyDateFrom   *time.Time `search:"buy_date" operator:"ge"`
 	BuyDateTo     *time.Time `search:"buy_date" operator:"lt"`
-	PriceFrom     *time.Time `search:"price" operator:"gt"`
-	PriceTo       *time.Time `search:"price" operator:"le"`
-}
-
-func Test_ChangeOperatorByTag(t *testing.T) {
-	param := make(map[string]map[string]string)
-	param["machine_number"] = map[string]string{
-		"target":   "machine_number",
-		"operator": "eq",
-	}
-	param["machine_name"] = map[string]string{
-		"target":   "machine_name",
-		"operator": "eq",
-	}
-	param["buy_date_from"] = map[string]string{
-		"target":   "buy_date",
-		"operator": "ge",
-	}
-	param["buy_date_to"] = map[string]string{
-		"target":   "buy_date",
-		"operator": "lt",
-	}
-	param["price_from"] = map[string]string{
-		"target":   "price",
-		"operator": "gt",
-	}
-	param["price_to"] = map[string]string{
-		"target":   "price",
-		"operator": "le",
-	}
-
-	qb := NewQueryBuilder().Table("machine")
-	for bindName, info := range param {
-		var op string
-		switch info["operator"] {
-		case "eq":
-			op = query_operator.Equal
-		case "lt":
-			op = query_operator.LessThan
-		case "le":
-			op = query_operator.LessEqual
-		case "gt":
-			op = query_operator.GraterThan
-		case "ge":
-			op = query_operator.GraterEqual
-		case "not":
-			op = query_operator.Not
-		}
-		qb = qb.Where(info["target"], op, bindName)
-	}
-	fmt.Println(qb.UseNamedPlaceholder().Build())
+	PriceFrom     *int       `search:"price" operator:"gt"`
+	PriceTo       *int       `search:"price" operator:"le"`
+	Owner         *string    `search:"owner" operator:"not"`
 }
 
 func Test_WhereMulti(t *testing.T) {
-	qb := NewQueryBuilder().Table("machine").
+	machineNumber := 150
+	machineName := "machine1"
+	price := 1000
+	now := time.Now()
+	owner := "owner1"
+
+	searchParam := SearchMachinesParameter{
+		MachineNumber: &machineNumber,
+		MachineName:   &machineName,
+		BuyDateFrom:   &now,
+		BuyDateTo:     &now,
+		PriceFrom:     &price,
+		PriceTo:       &price,
+		Owner:         &owner,
+	}
+
+	qb := NewQueryBuilder().Table("machines").
 		UseNamedPlaceholder().
-		WhereMultiByParam(SearchMachinesParameter{})
-	fmt.Println(qb.Build())
+		WhereMultiByStruct(searchParam)
+
+	expected := "SELECT machines.* FROM " +
+		"machines " +
+		"WHERE machine_number = :machine_number " +
+		"AND machine_name = :machine_name " +
+		"AND buy_date >= :buy_date_from " +
+		"AND buy_date < :buy_date_to " +
+		"AND price > :price_from " +
+		"AND price <= :price_to " +
+		"AND owner != :owner;"
+
+	q := qb.Build()
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
 }
