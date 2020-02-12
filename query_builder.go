@@ -3,6 +3,7 @@ package query_builder
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -247,6 +248,11 @@ func (qb *QueryBuilder) getSelectParagraphs() []string {
 		if len(split) > 1 {
 			table = split[0]
 			selectColumn = split[1]
+		}
+
+		if regexp.MustCompile(`^.*\(.*\)`).Match([]byte(column)) {
+			paragraph = append(paragraph, fmt.Sprintf("%s,", selectColumn))
+			continue
 		}
 
 		paragraph = append(paragraph, fmt.Sprintf(

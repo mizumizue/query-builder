@@ -91,6 +91,15 @@ func Test_QueryBuilderSelect(t *testing.T) {
 	}
 }
 
+func Test_QueryBuilderSelectCOALESCE(t *testing.T) {
+	q := NewQueryBuilder().Table("users").Select("COALESCE(name, 0) as name", "age", "sex").Build()
+	expected := "SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+}
+
 func Test_QueryBuilderMultiPattern(t *testing.T) {
 	q := NewQueryBuilder().Table("users").
 		Where("name", query_operator.Equal).
