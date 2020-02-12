@@ -7,4 +7,6 @@ const (
 	LessThan    = "<"
 	LessEqual   = "<="
 	Not         = "!="
+	In          = "IN"
+	NotIn       = "NOT IN"
 )

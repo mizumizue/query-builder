@@ -140,16 +140,20 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 }
 
 func Test_QueryBuilderJoin(t *testing.T) {
-	q := NewQueryBuilder().Table("users").UseNamedPlaceholder().Join(LeftJoin, "tasks", "user_id").Build()
+	joinFields := []string{"user_id"}
+	q := NewQueryBuilder().Table("users").UseNamedPlaceholder().
+		Join(LeftJoin, "tasks", joinFields, joinFields).Build()
 	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
 		t.Fail()
 	}
 
+	joinFields2 := []string{"user_id"}
+	joinFields3 := []string{"task_id"}
 	q2 := NewQueryBuilder().Table("users").UseNamedPlaceholder().
-		Join(LeftJoin, "tasks", "user_id").
-		Join(LeftJoin, "subtasks", "task_id", "tasks").
+		Join(LeftJoin, "tasks", joinFields2, joinFields2).
+		Join(LeftJoin, "subtasks", joinFields3, joinFields3, "tasks").
 		Build()
 
 	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id LEFT JOIN subtasks ON tasks.task_id = subtasks.task_id;"
@@ -160,9 +164,10 @@ func Test_QueryBuilderJoin(t *testing.T) {
 }
 
 func Test_QueryBuilderWhereOperator(t *testing.T) {
+	joinFields := []string{"user_id"}
 	q := NewQueryBuilder().Table("users").
 		UseNamedPlaceholder().
-		Join(LeftJoin, "tasks", "user_id").
+		Join(LeftJoin, "tasks", joinFields, joinFields).
 		Build()
 	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
 	if q != expected {
@@ -226,6 +231,79 @@ func Test_WhereMulti(t *testing.T) {
 	q := qb.Build()
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+}
+
+func Test_WhereIn(t *testing.T) {
+	q := NewQueryBuilder().Table("users").
+		Where("user_name", query_operator.Equal).
+		WhereIn("user_id", 3).
+		Build()
+	expected := "SELECT users.* FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+
+	q2 := NewQueryBuilder().Table("users").
+		UseNamedPlaceholder().
+		Where("user_name", query_operator.Equal).
+		WhereIn("user_id", 3).
+		Build()
+	expected2 := "SELECT users.* FROM users WHERE user_name = :user_name AND user_id IN (:user_id1, :user_id2, :user_id3);"
+	if q2 != expected2 {
+		t.Logf("expected: %s, acctual: %s", expected2, q2)
+		t.Fail()
+	}
+}
+
+func Test_WhereNotIn(t *testing.T) {
+	q := NewQueryBuilder().Table("users").
+		Where("user_name", query_operator.Equal).
+		WhereNotIn("user_id", 3).
+		Build()
+	expected := "SELECT users.* FROM users WHERE user_name = ? AND user_id NOT IN (?, ?, ?);"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+
+	q2 := NewQueryBuilder().Table("users").
+		UseNamedPlaceholder().
+		Where("user_name", query_operator.Equal).
+		WhereNotIn("user_id", 3).
+		Build()
+	expected2 := "SELECT users.* FROM users WHERE user_name = :user_name AND user_id NOT IN (:user_id1, :user_id2, :user_id3);"
+	if q2 != expected2 {
+		t.Logf("expected: %s, acctual: %s", expected2, q2)
+		t.Fail()
+	}
+}
+
+func Test_JoinMultipleFields(t *testing.T) {
+	fields := []string{"user_id", "task_id"}
+	q := NewQueryBuilder().Table("users").
+		Join(LeftJoin, "tasks", fields, fields).
+		Build()
+	expected := "SELECT users.* FROM users " +
+		"LEFT JOIN tasks " +
+		"ON users.user_id = tasks.user_id AND users.task_id = tasks.task_id;"
+	if q != expected {
+		t.Logf("expected: %s\n acctual: %s", expected, q)
+		t.Fail()
+	}
+
+	// JOIN 先と元でField名が異なる場合のJOIN
+	originFields := []string{"user_id", "user_task_id"}
+	targetFields := []string{"task_user_id", "task_id"}
+	q2 := NewQueryBuilder().Table("users").
+		Join(LeftJoin, "tasks", originFields, targetFields).
+		Build()
+	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.task_user_id AND users.user_task_id = tasks.task_id;"
+
+	if q2 != expected2 {
+		t.Logf("expected: %s\n acctual: %s", expected2, q2)
 		t.Fail()
 	}
 }
