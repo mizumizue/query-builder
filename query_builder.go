@@ -2,11 +2,12 @@ package query_builder
 
 import (
 	"fmt"
-	"query-builder/parameter_parser"
-	"query-builder/query_operator"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/trewanek/query-builder/parameter_parser"
+	"github.com/trewanek/query-builder/query_operator"
 )
 
 type QueryBuilder struct {

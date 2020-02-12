@@ -1,11 +1,12 @@
 package query_builder
 
 import (
-	_ "github.com/go-sql-driver/mysql"
-	"query-builder/query_operator"
 	"reflect"
 	"testing"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/trewanek/query-builder/query_operator"
 )
 
 type User struct {
