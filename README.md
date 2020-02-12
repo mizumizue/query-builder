@@ -9,7 +9,7 @@ Please use this with `database/sql` or `jmoiron/sqlx` or etc.
 ## Install
 
 ```
-go get -u github.com/trewanek/query_builder
+go get -u github.com/trewanek/query-builder
 ```
 
 ## How to use
