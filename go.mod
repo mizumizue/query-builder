@@ -1,4 +1,4 @@
-module query-builder
+module github.com/trewanek/query-builder
 
 go 1.13
 
