@@ -82,6 +82,30 @@ func Test_QueryBuilderWithLimitAndOffset(t *testing.T) {
 	}
 }
 
+func Test_QueryBuilderWithOrder(t *testing.T) {
+	q := NewQueryBuilder().
+		Table("users").
+		OrderBy("created, user_id", Asc).
+		Build()
+	expected := "SELECT users.* FROM users ORDER BY created, user_id ASC;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+
+	q2 := NewQueryBuilder().
+		Table("users").
+		OrderBy("created, user_id", Asc).
+		Limit().
+		Offset().
+		Build()
+	expected2 := "SELECT users.* FROM users ORDER BY created, user_id ASC LIMIT ? OFFSET ?;"
+	if expected2 != q2 {
+		t.Logf("expected: %s\n acctual: %s", expected2, q2)
+		t.Fail()
+	}
+}
+
 func Test_QueryBuilderSelect(t *testing.T) {
 	q := NewQueryBuilder().Table("users").Select("name", "age", "sex").Build()
 	expected := "SELECT users.name, users.age, users.sex FROM users;"
