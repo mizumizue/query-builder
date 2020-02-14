@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/trewanek/query-builder/parameter_parser"
-	"github.com/trewanek/query-builder/query_operator"
+	"github.com/trewanek/query-builder/object_parser"
 )
 
 type QueryBuilder struct {
@@ -17,26 +16,12 @@ type QueryBuilder struct {
 	selects         []string
 	joins           []map[string]interface{}
 	whereConditions []map[string]string
+	groupBy         string
+	order           map[string]string
 	limit           map[string]interface{}
 	offset          map[string]interface{}
-	order           map[string]string
 	placeholder     int
 }
-
-const (
-	Question = iota
-	Named
-)
-
-const (
-	LeftJoin  = "LEFT JOIN"
-	RightJoin = "RIGHT JOIN"
-)
-
-const (
-	Asc  = "ASC"
-	Desc = "DESC"
-)
 
 func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{
@@ -133,7 +118,7 @@ func (qb *QueryBuilder) WhereIn(column string, listLength int, bind ...string) *
 	copied.whereConditions = append(copied.whereConditions, map[string]string{
 		"column":     column,
 		"listLength": strconv.Itoa(listLength),
-		"operator":   query_operator.In,
+		"operator":   In,
 		"bind":       bd,
 	})
 	return copied
@@ -148,7 +133,7 @@ func (qb *QueryBuilder) WhereNotIn(column string, listLength int, bind ...string
 	copied.whereConditions = append(copied.whereConditions, map[string]string{
 		"column":     column,
 		"listLength": strconv.Itoa(listLength),
-		"operator":   query_operator.NotIn,
+		"operator":   NotIn,
 		"bind":       bd,
 	})
 	return copied
@@ -157,24 +142,40 @@ func (qb *QueryBuilder) WhereNotIn(column string, listLength int, bind ...string
 func (qb *QueryBuilder) WhereMultiByStruct(src interface{}) *QueryBuilder {
 	copied := qb.copy()
 
-	paramMap := parameter_parser.NewParameterParser(src).ParseBindMap()
-	for _, info := range paramMap {
+	searchMap := object_parser.NewObjectParser(src).SearchBindMap()
+	for _, info := range searchMap {
 		var op string
 		switch info["operator"] {
 		case "eq":
-			op = query_operator.Equal
+			op = Equal
 		case "lt":
-			op = query_operator.LessThan
+			op = LessThan
 		case "le":
-			op = query_operator.LessEqual
+			op = LessEqual
 		case "gt":
-			op = query_operator.GraterThan
+			op = GraterThan
 		case "ge":
-			op = query_operator.GraterEqual
+			op = GraterEqual
 		case "not":
-			op = query_operator.Not
+			op = Not
 		}
 		copied = copied.Where(info["target"], op, info["bind"])
+	}
+	return copied
+}
+
+func (qb *QueryBuilder) GroupBy(column string) *QueryBuilder {
+	copied := qb.copy()
+	copied.groupBy = column
+	return copied
+}
+
+// ex. OrderBy("created, user_id", Asc)
+func (qb *QueryBuilder) OrderBy(columns, order string) *QueryBuilder {
+	copied := qb.copy()
+	copied.order = map[string]string{
+		"columns": columns,
+		"order":   order,
 	}
 	return copied
 }
@@ -205,16 +206,6 @@ func (qb *QueryBuilder) Offset(bind ...string) *QueryBuilder {
 	return copied
 }
 
-// ex. OrderBy("created, user_id", Asc)
-func (qb *QueryBuilder) OrderBy(columns, order string) *QueryBuilder {
-	copied := qb.copy()
-	copied.order = map[string]string{
-		"columns": columns,
-		"order":   order,
-	}
-	return copied
-}
-
 func (qb *QueryBuilder) Build() string {
 	if qb.tableName == "" {
 		panic("target table is empty!!!")
@@ -229,6 +220,10 @@ func (qb *QueryBuilder) Build() string {
 
 	if len(qb.whereConditions) > 0 {
 		copied.query = append(copied.query, qb.getWhereParagraphs()...)
+	}
+
+	if qb.groupBy != "" {
+		copied.query = append(copied.query, qb.getGroupByParagraph())
 	}
 
 	if len(qb.order) > 0 {
@@ -338,7 +333,7 @@ func (qb *QueryBuilder) getWhereParagraphs() []string {
 			bind = ":" + condition["bind"]
 		}
 
-		if condition["operator"] == query_operator.In || condition["operator"] == query_operator.NotIn {
+		if condition["operator"] == In || condition["operator"] == NotIn {
 			listLength, _ := strconv.Atoi(condition["listLength"])
 			listBind := qb.buildListBind(bind, listLength)
 			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], listBind))
@@ -361,6 +356,10 @@ func (qb *QueryBuilder) buildListBind(bind string, listLength int) string {
 		}
 	}
 	return fmt.Sprintf(format, strings.Join(list, ", "))
+}
+
+func (qb *QueryBuilder) getGroupByParagraph() string {
+	return fmt.Sprintf("GROUP BY %s", qb.groupBy)
 }
 
 func (qb *QueryBuilder) getOrderParagraph() string {
@@ -389,6 +388,7 @@ func (qb *QueryBuilder) copy() *QueryBuilder {
 		selects:         qb.selects,
 		joins:           qb.joins,
 		whereConditions: qb.whereConditions,
+		groupBy:         qb.groupBy,
 		order:           qb.order,
 		limit:           qb.limit,
 		offset:          qb.offset,
