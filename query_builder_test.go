@@ -105,6 +105,19 @@ func Test_QueryBuilderWithOrder(t *testing.T) {
 	}
 }
 
+func Test_QueryBuilderWithGroupBy(t *testing.T) {
+	q := NewQueryBuilder().
+		Table("users").
+		GroupBy("user_id").
+		Build()
+
+	expected := "SELECT users.* FROM users GROUP BY user_id;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+}
+
 func Test_QueryBuilderSelect(t *testing.T) {
 	q := NewQueryBuilder().Table("users").Select("name", "age", "sex").Build()
 	expected := "SELECT users.name, users.age, users.sex FROM users;"
