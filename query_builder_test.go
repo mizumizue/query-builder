@@ -6,7 +6,6 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/trewanek/query-builder/query_operator"
 )
 
 type User struct {
@@ -117,12 +116,12 @@ func Test_QueryBuilderSelect(t *testing.T) {
 
 func Test_QueryBuilderMultiPattern(t *testing.T) {
 	q := NewQueryBuilder().Table("users").
-		Where("name", query_operator.Equal).
-		Where("age", query_operator.GraterEqual).
-		Where("age", query_operator.LessEqual).
-		Where("sex", query_operator.Not).
-		Where("age", query_operator.LessThan).
-		Where("age", query_operator.GraterThan).
+		Where("name", Equal).
+		Where("age", GraterEqual).
+		Where("age", LessEqual).
+		Where("sex", Not).
+		Where("age", LessThan).
+		Where("age", GraterThan).
 		Build()
 
 	expected := "SELECT users.* FROM users WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;"
@@ -133,12 +132,12 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 
 	q2 := NewQueryBuilder().Table("users").
 		UseNamedPlaceholder().
-		Where("name", query_operator.Equal).
-		Where("age", query_operator.GraterEqual).
-		Where("age", query_operator.LessEqual).
-		Where("sex", query_operator.Not).
-		Where("age", query_operator.LessThan).
-		Where("age", query_operator.GraterThan).
+		Where("name", Equal).
+		Where("age", GraterEqual).
+		Where("age", LessEqual).
+		Where("sex", Not).
+		Where("age", LessThan).
+		Where("age", GraterThan).
 		Build()
 
 	expected2 := "SELECT users.* FROM users WHERE name = :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;"
@@ -149,12 +148,12 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 
 	q3 := NewQueryBuilder().Table("users").
 		UseNamedPlaceholder().
-		Where("name", query_operator.Equal).
-		Where("age", query_operator.GraterEqual, "age1").
-		Where("age", query_operator.LessEqual, "age2").
-		Where("sex", query_operator.Not, "sex1").
-		Where("age", query_operator.LessThan, "age3").
-		Where("age", query_operator.GraterThan, "age4").
+		Where("name", Equal).
+		Where("age", GraterEqual, "age1").
+		Where("age", LessEqual, "age2").
+		Where("sex", Not, "sex1").
+		Where("age", LessThan, "age3").
+		Where("age", GraterThan, "age4").
 		Build()
 
 	expected3 := "SELECT users.* FROM users WHERE name = :name AND age >= :age1 AND age <= :age2 AND sex != :sex1 AND age < :age3 AND age > :age4;"
@@ -262,7 +261,7 @@ func Test_WhereMulti(t *testing.T) {
 
 func Test_WhereIn(t *testing.T) {
 	q := NewQueryBuilder().Table("users").
-		Where("user_name", query_operator.Equal).
+		Where("user_name", Equal).
 		WhereIn("user_id", 3).
 		Build()
 	expected := "SELECT users.* FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);"
@@ -273,7 +272,7 @@ func Test_WhereIn(t *testing.T) {
 
 	q2 := NewQueryBuilder().Table("users").
 		UseNamedPlaceholder().
-		Where("user_name", query_operator.Equal).
+		Where("user_name", Equal).
 		WhereIn("user_id", 3).
 		Build()
 	expected2 := "SELECT users.* FROM users WHERE user_name = :user_name AND user_id IN (:user_id1, :user_id2, :user_id3);"
@@ -285,7 +284,7 @@ func Test_WhereIn(t *testing.T) {
 
 func Test_WhereNotIn(t *testing.T) {
 	q := NewQueryBuilder().Table("users").
-		Where("user_name", query_operator.Equal).
+		Where("user_name", Equal).
 		WhereNotIn("user_id", 3).
 		Build()
 	expected := "SELECT users.* FROM users WHERE user_name = ? AND user_id NOT IN (?, ?, ?);"
@@ -296,7 +295,7 @@ func Test_WhereNotIn(t *testing.T) {
 
 	q2 := NewQueryBuilder().Table("users").
 		UseNamedPlaceholder().
-		Where("user_name", query_operator.Equal).
+		Where("user_name", Equal).
 		WhereNotIn("user_id", 3).
 		Build()
 	expected2 := "SELECT users.* FROM users WHERE user_name = :user_name AND user_id NOT IN (:user_id1, :user_id2, :user_id3);"

@@ -1,31 +1,34 @@
-package parameter_parser
+package object_parser
 
 import (
-	"github.com/iancoleman/strcase"
 	"reflect"
+
+	"github.com/iancoleman/strcase"
 )
 
-type ParameterParser struct {
-	param interface{}
+type ObjectParser struct {
+	object      interface{}
+	objectType  reflect.Type
+	objectValue reflect.Value
 }
 
-func NewParameterParser(param interface{}) *ParameterParser {
-	return &ParameterParser{
-		param: param,
+func NewObjectParser(object interface{}) *ObjectParser {
+	return &ObjectParser{
+		object:      object,
+		objectType:  reflect.TypeOf(object),
+		objectValue: reflect.ValueOf(object),
 	}
 }
 
-func (pp *ParameterParser) ParseNamedParam() map[string]interface{} {
+func (objectParser *ObjectParser) NamedParam() map[string]interface{} {
 	namedParam := make(map[string]interface{})
-	t := reflect.TypeOf(pp.param)
-	v := reflect.ValueOf(pp.param)
-
+	t, v := objectParser.getTypeAndValue()
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-
 		fieldPtr := v.Field(i)
+
 		if fieldPtr.Type().Kind() != reflect.Ptr {
-			panic("parameter value field is expected ptr value.")
+			panic("objecteter value field is expected ptr value.")
 		}
 
 		if fieldPtr.IsNil() {
@@ -34,6 +37,7 @@ func (pp *ParameterParser) ParseNamedParam() map[string]interface{} {
 
 		fieldValue := v.Field(i).Elem()
 		searchTag := field.Tag.Get("search")
+
 		if searchTag != "" {
 			fieldNameSnake := strcase.ToSnake(field.Name)
 			namedParam[fieldNameSnake] = fieldValue.Interface()
@@ -51,12 +55,10 @@ func (pp *ParameterParser) ParseNamedParam() map[string]interface{} {
 //	PriceFrom     *int `search:"price" operator:"gt"`
 //	PriceTo       *int `search:"price" operator:"le"`
 //}
-func (pp *ParameterParser) ParseBindMap() []map[string]string {
-	t := reflect.TypeOf(pp.param)
-	v := reflect.ValueOf(pp.param)
+func (objectParser *ObjectParser) SearchBindMap() []map[string]string {
+	t, v := objectParser.getTypeAndValue()
 	bindMap := make(map[string]map[string]string)
 	dic := make([]string, 0, t.NumField())
-
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 
@@ -84,4 +86,11 @@ func (pp *ParameterParser) ParseBindMap() []map[string]string {
 		sortedByFieldNumber = append(sortedByFieldNumber, bindMap[key])
 	}
 	return sortedByFieldNumber
+}
+
+func (objectParser *ObjectParser) getTypeAndValue() (reflect.Type, reflect.Value) {
+	if objectParser.objectType.Kind() == reflect.Ptr {
+		return objectParser.objectType.Elem(), objectParser.objectValue.Elem()
+	}
+	return objectParser.objectType, objectParser.objectValue
 }
