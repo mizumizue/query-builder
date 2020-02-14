@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/trewanek/query-builder/parameter_parser"
-	"github.com/trewanek/query-builder/query_operator"
+	"github.com/trewanek/query-builder/object_parser"
 )
 
 type QueryBuilder struct {
@@ -21,21 +20,6 @@ type QueryBuilder struct {
 	order           map[string]string
 	placeholder     int
 }
-
-const (
-	Question = iota
-	Named
-)
-
-const (
-	LeftJoin  = "LEFT JOIN"
-	RightJoin = "RIGHT JOIN"
-)
-
-const (
-	Asc  = "ASC"
-	Desc = "DESC"
-)
 
 func NewQueryBuilder() *QueryBuilder {
 	return &QueryBuilder{
@@ -132,7 +116,7 @@ func (qb *QueryBuilder) WhereIn(column string, listLength int, bind ...string) *
 	copied.whereConditions = append(copied.whereConditions, map[string]string{
 		"column":     column,
 		"listLength": strconv.Itoa(listLength),
-		"operator":   query_operator.In,
+		"operator":   In,
 		"bind":       bd,
 	})
 	return copied
@@ -147,7 +131,7 @@ func (qb *QueryBuilder) WhereNotIn(column string, listLength int, bind ...string
 	copied.whereConditions = append(copied.whereConditions, map[string]string{
 		"column":     column,
 		"listLength": strconv.Itoa(listLength),
-		"operator":   query_operator.NotIn,
+		"operator":   NotIn,
 		"bind":       bd,
 	})
 	return copied
@@ -156,22 +140,22 @@ func (qb *QueryBuilder) WhereNotIn(column string, listLength int, bind ...string
 func (qb *QueryBuilder) WhereMultiByStruct(src interface{}) *QueryBuilder {
 	copied := qb.copy()
 
-	paramMap := parameter_parser.NewParameterParser(src).ParseBindMap()
-	for _, info := range paramMap {
+	searchMap := object_parser.NewObjectParser(src).SearchBindMap()
+	for _, info := range searchMap {
 		var op string
 		switch info["operator"] {
 		case "eq":
-			op = query_operator.Equal
+			op = Equal
 		case "lt":
-			op = query_operator.LessThan
+			op = LessThan
 		case "le":
-			op = query_operator.LessEqual
+			op = LessEqual
 		case "gt":
-			op = query_operator.GraterThan
+			op = GraterThan
 		case "ge":
-			op = query_operator.GraterEqual
+			op = GraterEqual
 		case "not":
-			op = query_operator.Not
+			op = Not
 		}
 		copied = copied.Where(info["target"], op, info["bind"])
 	}
@@ -332,7 +316,7 @@ func (qb *QueryBuilder) getWhereParagraphs() []string {
 			bind = ":" + condition["bind"]
 		}
 
-		if condition["operator"] == query_operator.In || condition["operator"] == query_operator.NotIn {
+		if condition["operator"] == In || condition["operator"] == NotIn {
 			listLength, _ := strconv.Atoi(condition["listLength"])
 			listBind := qb.buildListBind(bind, listLength)
 			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], listBind))
