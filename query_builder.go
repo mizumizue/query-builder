@@ -15,9 +15,10 @@ type QueryBuilder struct {
 	selects         []string
 	joins           []map[string]interface{}
 	whereConditions []map[string]string
+	groupBy         string
+	order           map[string]string
 	limit           map[string]interface{}
 	offset          map[string]interface{}
-	order           map[string]string
 	placeholder     int
 }
 
@@ -162,6 +163,22 @@ func (qb *QueryBuilder) WhereMultiByStruct(src interface{}) *QueryBuilder {
 	return copied
 }
 
+func (qb *QueryBuilder) GroupBy(column string) *QueryBuilder {
+	copied := qb.copy()
+	copied.groupBy = column
+	return copied
+}
+
+// ex. OrderBy("created, user_id", Asc)
+func (qb *QueryBuilder) OrderBy(columns, order string) *QueryBuilder {
+	copied := qb.copy()
+	copied.order = map[string]string{
+		"columns": columns,
+		"order":   order,
+	}
+	return copied
+}
+
 func (qb *QueryBuilder) Limit(bind ...string) *QueryBuilder {
 	bd := "limit"
 	if len(bind) != 0 {
@@ -188,16 +205,6 @@ func (qb *QueryBuilder) Offset(bind ...string) *QueryBuilder {
 	return copied
 }
 
-// ex. OrderBy("created, user_id", Asc)
-func (qb *QueryBuilder) OrderBy(columns, order string) *QueryBuilder {
-	copied := qb.copy()
-	copied.order = map[string]string{
-		"columns": columns,
-		"order":   order,
-	}
-	return copied
-}
-
 func (qb *QueryBuilder) Build() string {
 	if qb.tableName == "" {
 		panic("target table is empty!!!")
@@ -212,6 +219,10 @@ func (qb *QueryBuilder) Build() string {
 
 	if len(qb.whereConditions) > 0 {
 		copied.query = append(copied.query, qb.getWhereParagraphs()...)
+	}
+
+	if qb.groupBy != "" {
+		copied.query = append(copied.query, qb.getGroupByParagraph())
 	}
 
 	if len(qb.order) > 0 {
@@ -341,6 +352,10 @@ func (qb *QueryBuilder) buildListBind(bind string, listLength int) string {
 	return fmt.Sprintf(format, strings.Join(list, ", "))
 }
 
+func (qb *QueryBuilder) getGroupByParagraph() string {
+	return fmt.Sprintf("GROUP BY %s", qb.groupBy)
+}
+
 func (qb *QueryBuilder) getOrderParagraph() string {
 	return fmt.Sprintf("ORDER BY %s %s", qb.order["columns"], qb.order["order"])
 }
@@ -367,6 +382,7 @@ func (qb *QueryBuilder) copy() *QueryBuilder {
 		selects:         qb.selects,
 		joins:           qb.joins,
 		whereConditions: qb.whereConditions,
+		groupBy:         qb.groupBy,
 		order:           qb.order,
 		limit:           qb.limit,
 		offset:          qb.offset,
