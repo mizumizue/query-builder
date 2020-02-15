@@ -16,7 +16,7 @@ type User struct {
 }
 
 func Test_QueryBuilder(t *testing.T) {
-	q := NewQueryBuilder().Table("users").Build()
+	q := NewSelectQueryBuilder().Table("users").Build()
 	expected := "SELECT users.* FROM users;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
@@ -25,7 +25,7 @@ func Test_QueryBuilder(t *testing.T) {
 }
 
 func Test_QueryBuilderModel(t *testing.T) {
-	q := NewQueryBuilder().Table("users").Model(User{}).Build()
+	q := NewSelectQueryBuilder().Table("users").Model(User{}).Build()
 	expected := "SELECT users.user_id, users.name, users.age, users.sex FROM users;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
@@ -34,15 +34,15 @@ func Test_QueryBuilderModel(t *testing.T) {
 }
 
 func Test_QueryBuilderWithLimit(t *testing.T) {
-	q := NewQueryBuilder().Table("users").Limit().Build()
+	q := NewSelectQueryBuilder().Table("users").Limit().Build()
 	expected := "SELECT users.* FROM users LIMIT ?;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().Table("users").UseNamedPlaceholder().Limit().Build()
-	expected2 := "SELECT users.* FROM users LIMIT :limit;"
+	q2 := NewSelectQueryBuilder().Table("users").UseNamedPlaceholder().Limit().Build()
+	expected2 := "SELECT users.* FROM users LIMIT :limitMap;"
 	if q2 != expected2 {
 		t.Logf("expected: %s, acctual: %s", expected2, q2)
 		t.Fail()
@@ -50,15 +50,15 @@ func Test_QueryBuilderWithLimit(t *testing.T) {
 }
 
 func Test_QueryBuilderWithOffset(t *testing.T) {
-	q := NewQueryBuilder().Table("users").Offset().Build()
+	q := NewSelectQueryBuilder().Table("users").Offset().Build()
 	expected := "SELECT users.* FROM users OFFSET ?;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().Table("users").UseNamedPlaceholder().Offset().Build()
-	expected2 := "SELECT users.* FROM users OFFSET :offset;"
+	q2 := NewSelectQueryBuilder().Table("users").UseNamedPlaceholder().Offset().Build()
+	expected2 := "SELECT users.* FROM users OFFSET :offsetMap;"
 	if q2 != expected2 {
 		t.Logf("expected: %s, acctual: %s", expected2, q2)
 		t.Fail()
@@ -66,15 +66,15 @@ func Test_QueryBuilderWithOffset(t *testing.T) {
 }
 
 func Test_QueryBuilderWithLimitAndOffset(t *testing.T) {
-	q := NewQueryBuilder().Table("users").Limit().Offset().Build()
+	q := NewSelectQueryBuilder().Table("users").Limit().Offset().Build()
 	expected := "SELECT users.* FROM users LIMIT ? OFFSET ?;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().Table("users").Limit().Offset().Build()
-	expected2 := "SELECT users.* FROM users LIMIT :limit OFFSET :offset;"
+	q2 := NewSelectQueryBuilder().Table("users").Limit().Offset().Build()
+	expected2 := "SELECT users.* FROM users LIMIT :limitMap OFFSET :offsetMap;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected2, q2)
 		t.Fail()
@@ -82,7 +82,7 @@ func Test_QueryBuilderWithLimitAndOffset(t *testing.T) {
 }
 
 func Test_QueryBuilderWithOrder(t *testing.T) {
-	q := NewQueryBuilder().
+	q := NewSelectQueryBuilder().
 		Table("users").
 		OrderBy("created, user_id", Asc).
 		Build()
@@ -92,7 +92,7 @@ func Test_QueryBuilderWithOrder(t *testing.T) {
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().
+	q2 := NewSelectQueryBuilder().
 		Table("users").
 		OrderBy("created, user_id", Asc).
 		Limit().
@@ -106,7 +106,7 @@ func Test_QueryBuilderWithOrder(t *testing.T) {
 }
 
 func Test_QueryBuilderWithGroupBy(t *testing.T) {
-	q := NewQueryBuilder().
+	q := NewSelectQueryBuilder().
 		Table("users").
 		GroupBy("user_id").
 		Build()
@@ -119,7 +119,7 @@ func Test_QueryBuilderWithGroupBy(t *testing.T) {
 }
 
 func Test_QueryBuilderSelect(t *testing.T) {
-	q := NewQueryBuilder().Table("users").Select("name", "age", "sex").Build()
+	q := NewSelectQueryBuilder().Table("users").Column("name", "age", "sex").Build()
 	expected := "SELECT users.name, users.age, users.sex FROM users;"
 	if q != expected {
 		t.Logf("expected: %s, acctual: %s", expected, q)
@@ -128,7 +128,7 @@ func Test_QueryBuilderSelect(t *testing.T) {
 }
 
 func Test_QueryBuilderMultiPattern(t *testing.T) {
-	q := NewQueryBuilder().Table("users").
+	q := NewSelectQueryBuilder().Table("users").
 		Where("name", Equal).
 		Where("age", GraterEqual).
 		Where("age", LessEqual).
@@ -143,7 +143,7 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().Table("users").
+	q2 := NewSelectQueryBuilder().Table("users").
 		UseNamedPlaceholder().
 		Where("name", Equal).
 		Where("age", GraterEqual).
@@ -159,7 +159,7 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 		t.Fail()
 	}
 
-	q3 := NewQueryBuilder().Table("users").
+	q3 := NewSelectQueryBuilder().Table("users").
 		UseNamedPlaceholder().
 		Where("name", Equal).
 		Where("age", GraterEqual, "age1").
@@ -178,7 +178,7 @@ func Test_QueryBuilderMultiPattern(t *testing.T) {
 
 func Test_QueryBuilderJoin(t *testing.T) {
 	joinFields := []string{"user_id"}
-	q := NewQueryBuilder().Table("users").UseNamedPlaceholder().
+	q := NewSelectQueryBuilder().Table("users").UseNamedPlaceholder().
 		Join(LeftJoin, "tasks", joinFields, joinFields).Build()
 	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
 	if q != expected {
@@ -188,7 +188,7 @@ func Test_QueryBuilderJoin(t *testing.T) {
 
 	joinFields2 := []string{"user_id"}
 	joinFields3 := []string{"task_id"}
-	q2 := NewQueryBuilder().Table("users").UseNamedPlaceholder().
+	q2 := NewSelectQueryBuilder().Table("users").UseNamedPlaceholder().
 		Join(LeftJoin, "tasks", joinFields2, joinFields2).
 		Join(LeftJoin, "subtasks", joinFields3, joinFields3, "tasks").
 		Build()
@@ -202,7 +202,7 @@ func Test_QueryBuilderJoin(t *testing.T) {
 
 func Test_QueryBuilderWhereOperator(t *testing.T) {
 	joinFields := []string{"user_id"}
-	q := NewQueryBuilder().Table("users").
+	q := NewSelectQueryBuilder().Table("users").
 		UseNamedPlaceholder().
 		Join(LeftJoin, "tasks", joinFields, joinFields).
 		Build()
@@ -214,7 +214,7 @@ func Test_QueryBuilderWhereOperator(t *testing.T) {
 }
 
 func Test_QueryBuilderIsImmutable(t *testing.T) {
-	qb := NewQueryBuilder().Table("users").Offset()
+	qb := NewSelectQueryBuilder().Table("users").Offset()
 	qb2 := qb.Table("tasks")
 
 	if reflect.DeepEqual(qb, qb2) {
@@ -251,7 +251,7 @@ func Test_WhereMulti(t *testing.T) {
 		Owner:         &owner,
 	}
 
-	qb := NewQueryBuilder().Table("machines").
+	qb := NewSelectQueryBuilder().Table("machines").
 		UseNamedPlaceholder().
 		WhereMultiByStruct(searchParam)
 
@@ -273,7 +273,7 @@ func Test_WhereMulti(t *testing.T) {
 }
 
 func Test_WhereIn(t *testing.T) {
-	q := NewQueryBuilder().Table("users").
+	q := NewSelectQueryBuilder().Table("users").
 		Where("user_name", Equal).
 		WhereIn("user_id", 3).
 		Build()
@@ -283,7 +283,7 @@ func Test_WhereIn(t *testing.T) {
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().Table("users").
+	q2 := NewSelectQueryBuilder().Table("users").
 		UseNamedPlaceholder().
 		Where("user_name", Equal).
 		WhereIn("user_id", 3).
@@ -296,7 +296,7 @@ func Test_WhereIn(t *testing.T) {
 }
 
 func Test_WhereNotIn(t *testing.T) {
-	q := NewQueryBuilder().Table("users").
+	q := NewSelectQueryBuilder().Table("users").
 		Where("user_name", Equal).
 		WhereNotIn("user_id", 3).
 		Build()
@@ -306,7 +306,7 @@ func Test_WhereNotIn(t *testing.T) {
 		t.Fail()
 	}
 
-	q2 := NewQueryBuilder().Table("users").
+	q2 := NewSelectQueryBuilder().Table("users").
 		UseNamedPlaceholder().
 		Where("user_name", Equal).
 		WhereNotIn("user_id", 3).
@@ -320,7 +320,7 @@ func Test_WhereNotIn(t *testing.T) {
 
 func Test_JoinMultipleFields(t *testing.T) {
 	fields := []string{"user_id", "task_id"}
-	q := NewQueryBuilder().Table("users").
+	q := NewSelectQueryBuilder().Table("users").
 		Join(LeftJoin, "tasks", fields, fields).
 		Build()
 	expected := "SELECT users.* FROM users " +
@@ -334,7 +334,7 @@ func Test_JoinMultipleFields(t *testing.T) {
 	// JOIN 先と元でField名が異なる場合のJOIN
 	originFields := []string{"user_id", "user_task_id"}
 	targetFields := []string{"task_user_id", "task_id"}
-	q2 := NewQueryBuilder().Table("users").
+	q2 := NewSelectQueryBuilder().Table("users").
 		Join(LeftJoin, "tasks", originFields, targetFields).
 		Build()
 	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.task_user_id AND users.user_task_id = tasks.task_id;"
