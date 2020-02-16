@@ -162,7 +162,8 @@ func Test_SelectQueryBuilder_OrderBy_GroupBy_Limit_Offset(t *testing.T) {
 
 func Test_SelectQueryBuilder_Where(t *testing.T) {
 	// ? bind
-	q := NewSelectQueryBuilder().Table("users").
+	q := NewSelectQueryBuilder().
+		Table("users").
 		Where("name", Equal).
 		Where("age", GraterEqual).
 		Where("age", LessEqual).
@@ -259,36 +260,6 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 	}
 }
 
-func Test_SelectQueryBuilder_Join(t *testing.T) {
-	joinFields := []string{"user_id"}
-	q := NewSelectQueryBuilder().
-		Placeholder(Named).
-		Table("users").
-		Join(LeftJoin, "tasks", joinFields, joinFields).
-		Build()
-	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	joinFields2 := []string{"user_id"}
-	joinFields3 := []string{"task_id"}
-	q2 := NewSelectQueryBuilder().
-		Placeholder(Named).
-		Table("users").
-		Join(LeftJoin, "tasks", joinFields2, joinFields2).
-		Join(LeftJoin, "subtasks", joinFields3, joinFields3, "tasks").
-		Build()
-	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id LEFT JOIN subtasks ON tasks.task_id = subtasks.task_id;"
-	if err := checkQuery(expected2, q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	// TODO add other joins
-}
-
 func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 	type SearchMachinesParameter struct { //ex Tagged struct
 		MachineNumber *int       `search:"machine_number" operator:"eq"`
@@ -336,6 +307,36 @@ func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+}
+
+func Test_SelectQueryBuilder_Join(t *testing.T) {
+	joinFields := []string{"user_id"}
+	q := NewSelectQueryBuilder().
+		Placeholder(Named).
+		Table("users").
+		Join(LeftJoin, "tasks", joinFields, joinFields).
+		Build()
+	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	joinFields2 := []string{"user_id"}
+	joinFields3 := []string{"task_id"}
+	q2 := NewSelectQueryBuilder().
+		Placeholder(Named).
+		Table("users").
+		Join(LeftJoin, "tasks", joinFields2, joinFields2).
+		Join(LeftJoin, "subtasks", joinFields3, joinFields3, "tasks").
+		Build()
+	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id LEFT JOIN subtasks ON tasks.task_id = subtasks.task_id;"
+	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	// TODO add other joins
 }
 
 func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
