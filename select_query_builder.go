@@ -2,6 +2,7 @@ package query_builder
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -202,6 +203,11 @@ func (builder *SelectQueryBuilder) getSelectParagraphs(tableName string, columns
 		if len(split) > 1 {
 			table = split[0]
 			selectColumn = split[1]
+		}
+
+		if regexp.MustCompile(`^.*\(.*\)`).Match([]byte(column)) {
+			paragraph = append(paragraph, fmt.Sprintf("%s,", selectColumn))
+			continue
 		}
 
 		paragraph = append(paragraph, fmt.Sprintf(
