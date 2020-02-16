@@ -1,6 +1,9 @@
 package query_builder
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type InsertQueryBuilder struct {
 	*queryBuilder
@@ -70,9 +73,17 @@ func (builder *InsertQueryBuilder) getInsertIntoParagraphs() []string {
 }
 
 func (builder *InsertQueryBuilder) getTableAndColumnsParagraphs(tableName string, columns ...string) string {
-	return ""
+	return fmt.Sprintf("%s(%s)", tableName, strings.Join(columns, ", "))
 }
 
 func (builder *InsertQueryBuilder) getValuesParagraphs(columns ...string) string {
-	return ""
+	valuesContent := make([]string, 0, len(columns))
+	bind := "?"
+	for _, column := range columns {
+		if builder.placeholderType == Named {
+			bind = ":" + column
+		}
+		valuesContent = append(valuesContent, bind)
+	}
+	return fmt.Sprintf("VALUES(%s)", strings.Join(valuesContent, ", "))
 }
