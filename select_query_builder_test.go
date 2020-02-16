@@ -344,9 +344,7 @@ func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
 	q := NewSelectQueryBuilder().Table("users").
 		Join(LeftJoin, "tasks", fields, fields).
 		Build()
-	expected := "SELECT users.* FROM users " +
-		"LEFT JOIN tasks " +
-		"ON users.user_id = tasks.user_id AND users.task_id = tasks.task_id;"
+	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id AND users.task_id = tasks.task_id;"
 	if err := checkQuery(expected, q); err != nil {
 		t.Log(err)
 		t.Fail()

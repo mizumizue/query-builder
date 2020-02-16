@@ -33,18 +33,35 @@ type User struct {
 ```
 
 ```
+# All Columns select
 # SELECT users.* FROM users;
 NewSelectQueryBuilder().Table("users").Build()
 
+# Columns By struct select
 # SELECT users.user_id, users.name, users.age, users.sex FROM users;
 NewSelectQueryBuilder().Table("users").Model(User{}).Build()
 
+# Columns select
 # SELECT users.name, users.age, users.sex FROM users;
 NewSelectQueryBuilder().Table("users").Column("name", "age", "sex").Build()
 
+# Use GroupBy
+# SELECT users.* FROM users GROUP BY user_id;
+NewSelectQueryBuilder().Table("users").GroupBy("user_id").Build()
+
+# Use OrderBy
+# SELECT users.* FROM users ORDER BY created ASC;
+NewSelectQueryBuilder().Table("users").OrderBy("created", Asc).Build()
+
+# Use Limit
 # SELECT users.* FROM users LIMIT ?;
 NewSelectQueryBuilder().Table("users").Limit().Build()
 
+# Use Offset
+# SELECT users.* FROM users OFFSET ?;
+NewSelectQueryBuilder().Table("users").Offset().Build()
+
+# Use Where
 # SELECT users.* FROM users WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;
 NewSelectQueryBuilder().
     Table("users").
@@ -56,7 +73,7 @@ NewSelectQueryBuilder().
     Where("age", GraterThan).
     Build()
 
-# if you want to use named placeholder, `Placeholder(Named)`
+# Select Placeholder(default is `?`)
 # SELECT users.* FROM users WHERE name = :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;
 NewSelectQueryBuilder().
     Placeholder(Named).
@@ -69,7 +86,7 @@ NewSelectQueryBuilder().
     Where("age", GraterThan).
     Build()
 
-# if you want to change named placeholder binding name
+# Select custom Placeholder(default `Named` is `column_name`)
 # SELECT users.* FROM users WHERE name = :name AND age >= :age1 AND age <= :age2 AND sex != :sex1 AND age < :age3 AND age > :age4;
 NewSelectQueryBuilder().
     Placeholder(Named).
@@ -82,21 +99,7 @@ NewSelectQueryBuilder().
     Where("age", GraterThan, "age4").
     Build()
 
-# SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;
-joinFields := []string{"user_id"}
-NewSelectQueryBuilder().
-    Placeholder(Named).
-    Table("users").
-    Join(LeftJoin, "tasks", joinFields, joinFields).Build()
-
-# SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.task_user_id AND users.user_task_id = tasks.task_id;
-originFields := []string{"user_id", "user_task_id"}
-targetFields := []string{"task_user_id", "task_id"}
-NewSelectQueryBuilder().
-    Table("users").
-    Join(LeftJoin, "tasks", originFields, targetFields).
-    Build()
-
+# Use IN(?)
 # SELECT users.* FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);
 NewSelectQueryBuilder().
     Table("users").
@@ -104,6 +107,7 @@ NewSelectQueryBuilder().
     WhereIn("user_id", 3).
     Build()
 
+# Use IN(:named)
 # SELECT users.* FROM users WHERE user_name = :user_name AND user_id IN (:user_id1, :user_id2, :user_id3);
 NewSelectQueryBuilder().
     Placeholder(Named).
@@ -112,7 +116,65 @@ NewSelectQueryBuilder().
     WhereIn("user_id", 3).
     Build()
 
-...TODO write other how to use examples
+# Use NOT IN(?)
+# SELECT users.* FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);
+NewSelectQueryBuilder().
+    Table("users").
+    Where("user_name", Equal).
+    WhereNotIn("user_id", 3).
+    Build()
+
+# Use NOT IN(:named)
+# SELECT users.* FROM users WHERE user_name = :user_name AND user_id IN (:user_id1, :user_id2, :user_id3);
+NewSelectQueryBuilder().
+    Table("users").
+    Placeholder(Named).
+    Where("user_name", Equal).
+    WhereNotIn("user_id", 3).
+    Build()
+
+# Use Where Bind By Struct
+# SELECT machines.* FROM machines WHERE machine_number = :machine_number AND machine_name = :machine_name AND buy_date >= :buy_date_from AND buy_date < :buy_date_to AND price > :price_from AND price <= :price_to AND owner != :owner;
+# Ex Struct
+type SearchMachinesParameter struct { //ex Tagged struct
+    MachineNumber *int       `search:"machine_number" operator:"eq"`
+    MachineName   *string    `search:"machine_name" operator:"eq"`
+    BuyDateFrom   *time.Time `search:"buy_date" operator:"ge"`
+    BuyDateTo     *time.Time `search:"buy_date" operator:"lt"`
+    PriceFrom     *int       `search:"price" operator:"gt"`
+    PriceTo       *int       `search:"price" operator:"le"`
+    Owner         *string    `search:"owner" operator:"not"`
+}
+NewSelectQueryBuilder().
+    Placeholder(Named).
+    Table("machines").
+    WhereMultiByStruct(searchParam).
+    Build()
+
+# Use Join
+# SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;
+joinFields := []string{"user_id"}
+NewSelectQueryBuilder().
+    Placeholder(Named).
+    Table("users").
+    Join(LeftJoin, "tasks", joinFields, joinFields).Build()
+
+# Use Join with Named Parameter
+# SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.task_user_id AND users.user_task_id = tasks.task_id;
+originFields := []string{"user_id", "user_task_id"}
+targetFields := []string{"task_user_id", "task_id"}
+NewSelectQueryBuilder().
+    Table("users").
+    Join(LeftJoin, "tasks", originFields, targetFields).
+    Build()
+
+# Multi Field Join
+# SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id AND users.task_id = tasks.task_id;
+fields := []string{"user_id", "task_id"}
+NewSelectQueryBuilder().Table("users").
+    Join(LeftJoin, "tasks", fields, fields).
+    Build()
+
 ```
 
 ### InsertQueryBuilder
