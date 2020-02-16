@@ -15,6 +15,10 @@ func Test_UpdateQueryBuilder_Column(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewUpdateQueryBuilder().
 		Placeholder(Named).
@@ -24,6 +28,10 @@ func Test_UpdateQueryBuilder_Column(t *testing.T) {
 
 	expected2 := "UPDATE users SET name = :name, age = :age, sex = :sex;"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -46,6 +54,10 @@ func Test_UpdateQueryBuilder_Where(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewUpdateQueryBuilder().
 		Placeholder(Named).
@@ -64,6 +76,10 @@ func Test_UpdateQueryBuilder_Where(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_UpdateQueryBuilder_WhereIn(t *testing.T) {
@@ -76,6 +92,10 @@ func Test_UpdateQueryBuilder_WhereIn(t *testing.T) {
 
 	expected := "UPDATE users SET name = ?, age = ?, sex = ? WHERE user_name = ? AND user_id IN (?, ?, ?);"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -93,6 +113,10 @@ func Test_UpdateQueryBuilder_WhereIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_UpdateQueryBuilder_WhereNotIn(t *testing.T) {
@@ -107,6 +131,10 @@ func Test_UpdateQueryBuilder_WhereNotIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewUpdateQueryBuilder().Table("users").
 		Placeholder(Named).
@@ -117,6 +145,10 @@ func Test_UpdateQueryBuilder_WhereNotIn(t *testing.T) {
 	expected2 := "UPDATE users SET name = :name, age = :age, sex = :sex WHERE user_name = :user_name AND user_id NOT IN (:user_id1, :user_id2, :user_id3);"
 	if q2 != expected2 {
 		t.Logf("expected: %s, acctual: %s", expected2, q2)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
 		t.Fail()
 	}
 }
