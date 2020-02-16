@@ -2,6 +2,7 @@ package query_builder
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -12,6 +13,7 @@ type SelectQueryBuilder struct {
 	limit         map[string]interface{}
 	offset        map[string]interface{}
 	*queryBuilder
+	subQueryBuilder *queryBuilder
 }
 
 func NewSelectQueryBuilder() *SelectQueryBuilder {
@@ -29,6 +31,7 @@ func (builder *SelectQueryBuilder) copy() *SelectQueryBuilder {
 		builder.limit,
 		builder.offset,
 		builder.queryBuilder.copy(),
+		nil,
 	}
 }
 
@@ -93,6 +96,12 @@ func (builder *SelectQueryBuilder) WhereIn(column string, listLength int, bind .
 func (builder *SelectQueryBuilder) WhereNotIn(column string, listLength int, bind ...string) *SelectQueryBuilder {
 	copied := builder.copy()
 	copied.queryBuilder = builder.whereNotIn(column, listLength, bind...)
+	return copied
+}
+
+func (builder *SelectQueryBuilder) WhereSubQuery(column, operator string, subQueryBuilder *SelectQueryBuilder) *SelectQueryBuilder {
+	copied := builder.copy()
+	copied.queryBuilder = builder.whereSubQuery(column, operator, subQueryBuilder)
 	return copied
 }
 
@@ -202,6 +211,11 @@ func (builder *SelectQueryBuilder) getSelectParagraphs(tableName string, columns
 		if len(split) > 1 {
 			table = split[0]
 			selectColumn = split[1]
+		}
+
+		if regexp.MustCompile(`^.*\(.*\)`).Match([]byte(column)) {
+			paragraph = append(paragraph, fmt.Sprintf("%s,", selectColumn))
+			continue
 		}
 
 		paragraph = append(paragraph, fmt.Sprintf(

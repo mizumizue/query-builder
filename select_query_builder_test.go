@@ -65,6 +65,23 @@ func Test_SelectQueryBuilder_Column(t *testing.T) {
 	}
 }
 
+func Test_SelectQueryBuilder_Column_DBMethod(t *testing.T) {
+	q := NewSelectQueryBuilder().
+		Table("users").
+		Column("COALESCE(name, 0) as name", "age", "sex").
+		Build()
+
+	expected := "SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
 func Test_SelectQueryBuilder_OrderBy(t *testing.T) {
 	q := NewSelectQueryBuilder().
 		Table("users").
@@ -466,6 +483,96 @@ func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+}
+
+func Test_SelectQueryBuilder_SubQuery(t *testing.T) {
+	q := NewSelectQueryBuilder().
+		Table("users").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().Table("users").Column("user_id"),
+		).
+		Build()
+
+	expected := "SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users);"
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
+func Test_SelectQueryBuilder_DoubleSubQuery(t *testing.T) {
+	q := NewSelectQueryBuilder().
+		Table("users").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().
+				Table("users").
+				Column("user_id").
+				WhereSubQuery(
+					"user_id",
+					Equal,
+					NewSelectQueryBuilder().
+						Table("users").
+						Column("user_id")),
+		).
+		Build()
+
+	expected := "SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users WHERE user_id = (SELECT users.user_id FROM users));"
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
+func Test_SelectQueryBuilder_UnSpecifiedColumnSubQueryNotSelected(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err.(error) != UnspecifiedColumnErr {
+			t.Log(err)
+			t.Fail()
+		}
+	}()
+	_ = NewSelectQueryBuilder().
+		Table("users").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().
+				Table("users"),
+		).
+		Build()
+}
+
+func Test_SelectQueryBuilder_UnSpecifiedColumnSubQueryToMany(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err.(error) != UnspecifiedColumnErr {
+			t.Log(err)
+			t.Fail()
+		}
+	}()
+
+	_ = NewSelectQueryBuilder().
+		Table("users").
+		Column("user_id", "name").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().
+				Table("users"),
+		).
+		Build()
 }
 
 func Test_SelectQueryBuilder_IsImmutable(t *testing.T) {
