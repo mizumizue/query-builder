@@ -4,8 +4,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type User struct {
