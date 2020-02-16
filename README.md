@@ -174,6 +174,17 @@ fields := []string{"user_id", "task_id"}
 NewSelectQueryBuilder().Table("users").
     Join(LeftJoin, "tasks", fields, fields).
     Build()
+
+# Use SubQuery
+# SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users);
+NewSelectQueryBuilder().
+    Table("users").
+    WhereSubQuery(
+        "user_id",
+        Equal,
+        NewSelectQueryBuilder().Table("users").Column("user_id"),
+    ).
+    Build()
 ```
 
 ### InsertQueryBuilder
