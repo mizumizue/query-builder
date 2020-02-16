@@ -269,6 +269,10 @@ func (builder *SelectQueryBuilder) getLimitParagraph(placeholder int) string {
 }
 
 func (builder *SelectQueryBuilder) getOffsetParagraph(placeholder int) string {
+	if builder.limit == nil {
+		panic("offset is limit required")
+	}
+
 	bind := "?"
 	if placeholder == Named {
 		bind = ":" + builder.offset["bind"].(string)
