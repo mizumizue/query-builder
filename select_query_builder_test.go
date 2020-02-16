@@ -23,6 +23,11 @@ func Test_SelectQueryBuilder_OnlyTable(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Model(t *testing.T) {
@@ -36,6 +41,11 @@ func Test_SelectQueryBuilder_Model(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Column(t *testing.T) {
@@ -45,6 +55,11 @@ func Test_SelectQueryBuilder_Column(t *testing.T) {
 		Build()
 	expected := "SELECT users.name, users.age, users.sex FROM users;"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -61,12 +76,22 @@ func Test_SelectQueryBuilder_OrderBy(t *testing.T) {
 		t.Fail()
 	}
 
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
 	q2 := NewSelectQueryBuilder().
 		Table("users").
 		OrderBy("created, user_id", Desc).
 		Build()
 	expected2 := "SELECT users.* FROM users ORDER BY created, user_id DESC;"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -83,6 +108,11 @@ func Test_SelectQueryBuilder_GroupBy(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Limit(t *testing.T) {
@@ -92,6 +122,10 @@ func Test_SelectQueryBuilder_Limit(t *testing.T) {
 		Build()
 	expected := "SELECT users.* FROM users LIMIT ?;"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -106,15 +140,24 @@ func Test_SelectQueryBuilder_Limit(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Offset(t *testing.T) {
 	q := NewSelectQueryBuilder().
 		Table("users").
+		Limit().
 		Offset().
 		Build()
-	expected := "SELECT users.* FROM users OFFSET ?;"
+	expected := "SELECT users.* FROM users LIMIT ? OFFSET ?;"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -122,10 +165,15 @@ func Test_SelectQueryBuilder_Offset(t *testing.T) {
 	q2 := NewSelectQueryBuilder().
 		Table("users").
 		Placeholder(Named).
+		Limit().
 		Offset().
 		Build()
-	expected2 := "SELECT users.* FROM users OFFSET :offset;"
+	expected2 := "SELECT users.* FROM users LIMIT :limit OFFSET :offset;"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -144,6 +192,10 @@ func Test_SelectQueryBuilder_OrderBy_GroupBy_Limit_Offset(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewSelectQueryBuilder().
 		Placeholder(Named).
@@ -155,6 +207,10 @@ func Test_SelectQueryBuilder_OrderBy_GroupBy_Limit_Offset(t *testing.T) {
 		Build()
 	expected2 := "SELECT users.* FROM users GROUP BY user_id ORDER BY created DESC LIMIT :limit OFFSET :offset;"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -176,6 +232,10 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	// column name bind
 	q2 := NewSelectQueryBuilder().Table("users").
@@ -189,6 +249,10 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Build()
 	expected2 := "SELECT users.* FROM users WHERE name = :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -208,6 +272,10 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q3); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_WhereIn(t *testing.T) {
@@ -219,6 +287,10 @@ func Test_SelectQueryBuilder_WhereIn(t *testing.T) {
 
 	expected := "SELECT users.* FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -235,6 +307,10 @@ func Test_SelectQueryBuilder_WhereIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
@@ -247,6 +323,10 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewSelectQueryBuilder().Table("users").
 		Placeholder(Named).
@@ -256,6 +336,10 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 	expected2 := "SELECT users.* FROM users WHERE user_name = :user_name AND user_id NOT IN (:user_id1, :user_id2, :user_id3);"
 	if q2 != expected2 {
 		t.Logf("expected: %s, acctual: %s", expected2, q2)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
 		t.Fail()
 	}
 }
@@ -307,6 +391,10 @@ func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Join(t *testing.T) {
@@ -318,6 +406,10 @@ func Test_SelectQueryBuilder_Join(t *testing.T) {
 		Build()
 	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -335,6 +427,10 @@ func Test_SelectQueryBuilder_Join(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	// TODO add other joins
 }
@@ -349,6 +445,10 @@ func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	// JOIN 先と元でField名が異なる場合のJOIN
 	originFields := []string{"user_id", "user_task_id"}
@@ -360,6 +460,10 @@ func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
 
 	if q2 != expected2 {
 		t.Logf("expected: %s\n acctual: %s", expected2, q2)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
 		t.Fail()
 	}
 }

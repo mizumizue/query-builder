@@ -58,8 +58,8 @@ NewSelectQueryBuilder().Table("users").OrderBy("created", Asc).Build()
 NewSelectQueryBuilder().Table("users").Limit().Build()
 
 # Use Offset
-# SELECT users.* FROM users OFFSET ?;
-NewSelectQueryBuilder().Table("users").Offset().Build()
+# SELECT users.* FROM users LIMIT ? OFFSET ?;
+NewSelectQueryBuilder().Table("users").Limit().Offset().Build()
 
 # Use Where
 # SELECT users.* FROM users WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;
