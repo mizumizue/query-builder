@@ -9,6 +9,11 @@ import (
 	"github.com/trewanek/query-builder/object_parser"
 )
 
+var (
+	SubQueryEmptyErr     = fmt.Errorf("subQuery is required. this should be not empty")
+	UnspecifiedColumnErr = fmt.Errorf("subQuery column should be specified")
+)
+
 type queryBuilder struct {
 	query           []string
 	tableName       string
@@ -131,6 +136,25 @@ func (builder *queryBuilder) whereMultiByStruct(src interface{}) *queryBuilder {
 	return copied
 }
 
+func (builder *queryBuilder) whereSubQuery(column, operator string, subQueryBuilder *SelectQueryBuilder) *queryBuilder {
+	copied := builder.copy()
+
+	if subQueryBuilder == nil {
+		panic(SubQueryEmptyErr)
+	}
+
+	if len(subQueryBuilder.columns) == 0 || len(subQueryBuilder.columns) > 1 {
+		panic(UnspecifiedColumnErr)
+	}
+
+	copied.whereConditions = append(copied.whereConditions, map[string]string{
+		"column":   column,
+		"operator": operator,
+		"subQuery": strings.TrimRight(subQueryBuilder.Build(), ";"),
+	})
+	return copied
+}
+
 func (builder *queryBuilder) copy() *queryBuilder {
 	return &queryBuilder{
 		query:           builder.query,
@@ -149,6 +173,16 @@ func (builder *queryBuilder) getWhereParagraphs() []string {
 	for index, condition := range builder.whereConditions {
 		if index == len(builder.whereConditions)-1 {
 			format = strings.TrimRight(format, " AND")
+		}
+
+		if condition["subQuery"] != "" {
+			paragraph = append(paragraph, fmt.Sprintf(
+				"%s %s (%s)",
+				condition["column"],
+				condition["operator"],
+				condition["subQuery"],
+			))
+			continue
 		}
 
 		bind := "?"

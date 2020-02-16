@@ -468,6 +468,96 @@ func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
 	}
 }
 
+func Test_SelectQueryBuilder_SubQuery(t *testing.T) {
+	q := NewSelectQueryBuilder().
+		Table("users").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().Table("users").Column("user_id"),
+		).
+		Build()
+
+	expected := "SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users);"
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
+func Test_SelectQueryBuilder_DoubleSubQuery(t *testing.T) {
+	q := NewSelectQueryBuilder().
+		Table("users").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().
+				Table("users").
+				Column("user_id").
+				WhereSubQuery(
+					"user_id",
+					Equal,
+					NewSelectQueryBuilder().
+						Table("users").
+						Column("user_id")),
+		).
+		Build()
+
+	expected := "SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users WHERE user_id = (SELECT users.user_id FROM users));"
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
+func Test_SelectQueryBuilder_UnSpecifiedColumnSubQueryNotSelected(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err.(error) != UnspecifiedColumnErr {
+			t.Log(err)
+			t.Fail()
+		}
+	}()
+	_ = NewSelectQueryBuilder().
+		Table("users").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().
+				Table("users"),
+		).
+		Build()
+}
+
+func Test_SelectQueryBuilder_UnSpecifiedColumnSubQueryToMany(t *testing.T) {
+	defer func() {
+		err := recover()
+		if err.(error) != UnspecifiedColumnErr {
+			t.Log(err)
+			t.Fail()
+		}
+	}()
+
+	_ = NewSelectQueryBuilder().
+		Table("users").
+		Column("user_id", "name").
+		WhereSubQuery(
+			"user_id",
+			Equal,
+			NewSelectQueryBuilder().
+				Table("users"),
+		).
+		Build()
+}
+
 func Test_SelectQueryBuilder_IsImmutable(t *testing.T) {
 	qb := NewSelectQueryBuilder().
 		Table("users").
