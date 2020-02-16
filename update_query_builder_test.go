@@ -96,7 +96,8 @@ func Test_UpdateQueryBuilder_WhereIn(t *testing.T) {
 }
 
 func Test_UpdateQueryBuilder_WhereNotIn(t *testing.T) {
-	q := NewUpdateQueryBuilder().Table("users").
+	q := NewUpdateQueryBuilder().
+		Table("users").
 		Column("name", "age", "sex").
 		Where("user_name", Equal).
 		WhereNotIn("user_id", 3).

@@ -174,25 +174,124 @@ fields := []string{"user_id", "task_id"}
 NewSelectQueryBuilder().Table("users").
     Join(LeftJoin, "tasks", fields, fields).
     Build()
-
 ```
 
 ### InsertQueryBuilder
 
 ```
-...TODO write other how to use examples
+# Select Columns
+# INSERT INTO users(name, age, sex) VALUES(?, ?, ?);
+NewInsertQueryBuilder().
+    Table("users").
+    Column("name", "age", "sex").
+    Build()
+
+# INSERT INTO users(name, age, sex) VALUES(:name, :age, :sex);
+NewInsertQueryBuilder().
+    Placeholder(Named).
+    Table("users").
+    Column("name", "age", "sex").
+    Build()
+
+# Select By Model
+# INSERT INTO users(user_id, name, age, sex) VALUES(?, ?, ?, ?);
+NewInsertQueryBuilder().
+    Table("users").
+    Model(User{}).
+    Build()
+
+# INSERT INTO users(user_id, name, age, sex) VALUES(:user_id, :name, :age, :sex);
+NewInsertQueryBuilder().
+    Placeholder(Named).
+    Table("users").
+    Model(User{}).
+    Build()
 ```
 
 ### UpdateQueryBuilder
 
 ```
-...TODO write other how to use examples
+# Select Columns
+# UPDATE users SET name = ?, age = ?, sex = ?;
+NewUpdateQueryBuilder().
+    Table("users").
+    Column("name", "age", "sex").
+    Build()
+
+# UPDATE users SET name = :name, age = :age, sex = :sex;
+NewUpdateQueryBuilder().
+    Placeholder(Named).
+    Table("users").
+    Column("name", "age", "sex").
+    Build()
+
+# Use Where
+# UPDATE users SET name = ?, age = ?, sex = ? WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;
+NewUpdateQueryBuilder().
+    Table("users").
+    Column("name", "age", "sex").
+    Where("name", Equal).
+    Where("age", GraterEqual).
+    Where("age", LessEqual).
+    Where("sex", Not).
+    Where("age", LessThan).
+    Where("age", GraterThan).
+    Build()
+
+# Use IN(?)
+# UPDATE users SET name = ?, age = ?, sex = ? WHERE user_name = ? AND user_id IN (?, ?, ?);
+NewUpdateQueryBuilder().
+    Table("users").
+    Column("name", "age", "sex").
+    Where("user_name", Equal).
+    WhereIn("user_id", 3).
+    Build()
+
+# Use NOT IN(?)
+# UPDATE users SET name = ?, age = ?, sex = ? WHERE user_name = ? AND user_id NOT IN (?, ?, ?);
+NewUpdateQueryBuilder().
+    Table("users").
+    Column("name", "age", "sex").
+    Where("user_name", Equal).
+    WhereNotIn("user_id", 3).
+    Build()
 ```
 
 ### DeleteQueryBuilder
 
 ```
-...TODO write other how to use examples
+# All Delete
+# DELETE FROM users;
+NewDeleteQueryBuilder().
+    Table("users").
+    Build()
+
+# Use Where
+# DELETE FROM users WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;
+NewDeleteQueryBuilder().
+    Table("users").
+    Where("name", Equal).
+    Where("age", GraterEqual).
+    Where("age", LessEqual).
+    Where("sex", Not).
+    Where("age", LessThan).
+    Where("age", GraterThan).
+    Build()
+
+# Use IN(?)
+# DELETE FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);
+NewDeleteQueryBuilder().
+    Table("users").
+    Where("user_name", Equal).
+    WhereIn("user_id", 3).
+    Build()
+
+# Use NOT IN(?)
+# DELETE FROM users WHERE user_name = ? AND user_id NOT IN (?, ?, ?);
+NewDeleteQueryBuilder().Table("users").
+    Where("user_name", Equal).
+    WhereNotIn("user_id", 3).
+    Build()
 ```
 
 ## Install
