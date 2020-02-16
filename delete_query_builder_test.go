@@ -12,6 +12,10 @@ func Test_DeleteQueryBuilder_Normal(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_DeleteQueryBuilder_Where(t *testing.T) {
@@ -27,6 +31,10 @@ func Test_DeleteQueryBuilder_Where(t *testing.T) {
 
 	expected := "DELETE FROM users WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -47,6 +55,10 @@ func Test_DeleteQueryBuilder_Where(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_DeleteQueryBuilder_WhereIn(t *testing.T) {
@@ -58,6 +70,10 @@ func Test_DeleteQueryBuilder_WhereIn(t *testing.T) {
 
 	expected := "DELETE FROM users WHERE user_name = ? AND user_id IN (?, ?, ?);"
 	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -74,6 +90,10 @@ func Test_DeleteQueryBuilder_WhereIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_DeleteQueryBuilder_WhereNotIn(t *testing.T) {
@@ -86,6 +106,10 @@ func Test_DeleteQueryBuilder_WhereNotIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewDeleteQueryBuilder().Table("users").
 		Placeholder(Named).
@@ -95,6 +119,10 @@ func Test_DeleteQueryBuilder_WhereNotIn(t *testing.T) {
 	expected2 := "DELETE FROM users WHERE user_name = :user_name AND user_id NOT IN (:user_id1, :user_id2, :user_id3);"
 	if q2 != expected2 {
 		t.Logf("expected: %s, acctual: %s", expected2, q2)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
 		t.Fail()
 	}
 }

@@ -13,6 +13,10 @@ func Test_InsertQueryBuilder_Column(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewInsertQueryBuilder().
 		Placeholder(Named).
@@ -22,6 +26,10 @@ func Test_InsertQueryBuilder_Column(t *testing.T) {
 
 	expected2 := "INSERT INTO users(name, age, sex) VALUES(:name, :age, :sex);"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -38,6 +46,10 @@ func Test_InsertQueryBuilder_Model(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 
 	q2 := NewInsertQueryBuilder().
 		Placeholder(Named).
@@ -47,6 +59,10 @@ func Test_InsertQueryBuilder_Model(t *testing.T) {
 
 	expected2 := "INSERT INTO users(user_id, name, age, sex) VALUES(:user_id, :name, :age, :sex);"
 	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q2); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
