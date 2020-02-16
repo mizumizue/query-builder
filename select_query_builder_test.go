@@ -65,6 +65,23 @@ func Test_SelectQueryBuilder_Column(t *testing.T) {
 	}
 }
 
+func Test_SelectQueryBuilder_Column_DBMethod(t *testing.T) {
+	q := NewSelectQueryBuilder().
+		Table("users").
+		Column("COALESCE(name, 0) as name", "age", "sex").
+		Build()
+
+	expected := "SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;"
+	if q != expected {
+		t.Logf("expected: %s, acctual: %s", expected, q)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
 func Test_SelectQueryBuilder_OrderBy(t *testing.T) {
 	q := NewSelectQueryBuilder().
 		Table("users").
