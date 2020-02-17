@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	SubQueryEmptyErr     = fmt.Errorf("subQuery is required. this should be not empty")
-	UnspecifiedColumnErr = fmt.Errorf("subQuery column should be specified")
+	SubQueryEmptyErr           = fmt.Errorf("subQuery is required. this should be not empty")
+	SubQueryReturnMultiRowsErr = fmt.Errorf("subQuery returns multi rows. set limit and specify single row")
+	UnspecifiedColumnErr       = fmt.Errorf("subQuery column should be specified")
 )
 
 type queryBuilder struct {
@@ -20,6 +21,7 @@ type queryBuilder struct {
 	columns         []string
 	whereConditions []map[string]string
 	placeholderType int
+	argNum          int
 }
 
 func (builder *queryBuilder) placeholder(placeholderType int) *queryBuilder {
@@ -147,6 +149,10 @@ func (builder *queryBuilder) whereSubQuery(column, operator string, subQueryBuil
 		panic(UnspecifiedColumnErr)
 	}
 
+	if subQueryBuilder.limit["use"] != nil && !subQueryBuilder.limit["use"].(bool) {
+		panic(SubQueryReturnMultiRowsErr)
+	}
+
 	copied.whereConditions = append(copied.whereConditions, map[string]string{
 		"column":   column,
 		"operator": operator,
@@ -197,7 +203,12 @@ func (builder *queryBuilder) getWhereParagraphs() []string {
 			continue
 		}
 
-		paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], bind))
+		if builder.placeholderType == DollarNumber {
+			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], "$"+strconv.Itoa(builder.argNum+1)))
+			builder.argNum += 1
+		} else {
+			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], bind))
+		}
 	}
 	return paragraph
 }
@@ -208,9 +219,14 @@ func (builder *queryBuilder) buildListBind(bind string, listLength int) string {
 	for i := 0; i < listLength; i++ {
 		if builder.placeholderType == Named {
 			list = append(list, bind+strconv.Itoa(i+1))
-		} else {
-			list = append(list, bind)
+			continue
 		}
+		if builder.placeholderType == DollarNumber {
+			list = append(list, "$"+strconv.Itoa(builder.argNum+1))
+			builder.argNum += 1
+			continue
+		}
+		list = append(list, bind)
 	}
 	return fmt.Sprintf(format, strings.Join(list, ", "))
 }

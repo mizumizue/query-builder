@@ -3,6 +3,7 @@ package query_builder
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -279,6 +280,10 @@ func (builder *SelectQueryBuilder) getLimitParagraph(placeholder int) string {
 	if placeholder == Named {
 		bind = ":" + builder.limit["bind"].(string)
 	}
+	if placeholder == DollarNumber {
+		bind = "$" + strconv.Itoa(builder.argNum+1)
+		builder.argNum += 1
+	}
 	return fmt.Sprintf("LIMIT %s", bind)
 }
 
@@ -290,6 +295,10 @@ func (builder *SelectQueryBuilder) getOffsetParagraph(placeholder int) string {
 	bind := "?"
 	if placeholder == Named {
 		bind = ":" + builder.offset["bind"].(string)
+	}
+	if placeholder == DollarNumber {
+		bind = "$" + strconv.Itoa(builder.argNum+1)
+		builder.argNum += 1
 	}
 	return fmt.Sprintf("OFFSET %s", bind)
 }

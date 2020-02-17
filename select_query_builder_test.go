@@ -161,6 +161,17 @@ func Test_SelectQueryBuilder_Limit(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+
+	q3 := NewSelectQueryBuilder().
+		Table("users").
+		Placeholder(DollarNumber).
+		Limit().
+		Build()
+	expected3 := "SELECT users.* FROM users LIMIT $1;"
+	if err := checkQuery(expected3, q3); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Offset(t *testing.T) {
@@ -191,6 +202,18 @@ func Test_SelectQueryBuilder_Offset(t *testing.T) {
 		t.Fail()
 	}
 	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	q3 := NewSelectQueryBuilder().
+		Table("users").
+		Placeholder(DollarNumber).
+		Limit().
+		Offset().
+		Build()
+	expected3 := "SELECT users.* FROM users LIMIT $1 OFFSET $2;"
+	if err := checkQuery(expected3, q3); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -238,13 +261,15 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 	q := NewSelectQueryBuilder().
 		Table("users").
 		Where("name", Equal).
+		Where("name", Like).
+		Where("name", NotLike).
 		Where("age", GraterEqual).
 		Where("age", LessEqual).
 		Where("sex", Not).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
-	expected := "SELECT users.* FROM users WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;"
+	expected := "SELECT users.* FROM users WHERE name = ? AND name LIKE ? AND name NOT LIKE ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;"
 	if err := checkQuery(expected, q); err != nil {
 		t.Log(err)
 		t.Fail()
@@ -258,13 +283,15 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 	q2 := NewSelectQueryBuilder().Table("users").
 		Placeholder(Named).
 		Where("name", Equal).
+		Where("name", Like).
+		Where("name", NotLike).
 		Where("age", GraterEqual).
 		Where("age", LessEqual).
 		Where("sex", Not).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
-	expected2 := "SELECT users.* FROM users WHERE name = :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;"
+	expected2 := "SELECT users.* FROM users WHERE name = :name AND name LIKE :name AND name NOT LIKE :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;"
 	if err := checkQuery(expected2, q2); err != nil {
 		t.Log(err)
 		t.Fail()
@@ -277,19 +304,39 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 	// custom name bind
 	q3 := NewSelectQueryBuilder().Table("users").
 		Placeholder(Named).
-		Where("name", Equal).
+		Where("name", Equal, "name1").
+		Where("name", Like, "name2").
+		Where("name", NotLike, "name3").
 		Where("age", GraterEqual, "age1").
 		Where("age", LessEqual, "age2").
 		Where("sex", Not, "sex1").
 		Where("age", LessThan, "age3").
 		Where("age", GraterThan, "age4").
 		Build()
-	expected3 := "SELECT users.* FROM users WHERE name = :name AND age >= :age1 AND age <= :age2 AND sex != :sex1 AND age < :age3 AND age > :age4;"
+	expected3 := "SELECT users.* FROM users WHERE name = :name1 AND name LIKE :name2 AND name NOT LIKE :name3 AND age >= :age1 AND age <= :age2 AND sex != :sex1 AND age < :age3 AND age > :age4;"
 	if err := checkQuery(expected3, q3); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
 	if err := checkSqlSyntax(q3); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	// column name bind
+	q4 := NewSelectQueryBuilder().Table("users").
+		Placeholder(DollarNumber).
+		Where("name", Equal).
+		Where("name", Like).
+		Where("name", NotLike).
+		Where("age", GraterEqual).
+		Where("age", LessEqual).
+		Where("sex", Not).
+		Where("age", LessThan).
+		Where("age", GraterThan).
+		Build()
+	expected4 := "SELECT users.* FROM users WHERE name = $1 AND name LIKE $2 AND name NOT LIKE $3 AND age >= $4 AND age <= $5 AND sex != $6 AND age < $7 AND age > $8;"
+	if err := checkQuery(expected4, q4); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -328,6 +375,19 @@ func Test_SelectQueryBuilder_WhereIn(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+
+	q3 := NewSelectQueryBuilder().
+		Placeholder(DollarNumber).
+		Table("users").
+		Where("user_name", Equal).
+		WhereIn("user_id", 3).
+		Build()
+
+	expected3 := "SELECT users.* FROM users WHERE user_name = $1 AND user_id IN ($2, $3, $4);"
+	if err := checkQuery(expected3, q3); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
@@ -351,11 +411,22 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 		WhereNotIn("user_id", 3).
 		Build()
 	expected2 := "SELECT users.* FROM users WHERE user_name = :user_name AND user_id NOT IN (:user_id1, :user_id2, :user_id3);"
-	if q2 != expected2 {
-		t.Logf("expected: %s, acctual: %s", expected2, q2)
+	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
 		t.Fail()
 	}
 	if err := checkSqlSyntax(q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	q3 := NewSelectQueryBuilder().Table("users").
+		Placeholder(DollarNumber).
+		Where("user_name", Equal).
+		WhereNotIn("user_id", 3).
+		Build()
+	expected3 := "SELECT users.* FROM users WHERE user_name = $1 AND user_id NOT IN ($2, $3, $4);"
+	if err := checkQuery(expected3, q3); err != nil {
 		t.Log(err)
 		t.Fail()
 	}
@@ -412,6 +483,27 @@ func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
+
+	q2 := NewSelectQueryBuilder().
+		Placeholder(DollarNumber).
+		Table("machines").
+		WhereMultiByStruct(searchParam).
+		Build()
+
+	expected2 := "SELECT machines.* FROM " +
+		"machines " +
+		"WHERE machine_number = $1 " +
+		"AND machine_name = $2 " +
+		"AND buy_date >= $3 " +
+		"AND buy_date < $4 " +
+		"AND price > $5 " +
+		"AND price <= $6 " +
+		"AND owner != $7;"
+
+	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
 }
 
 func Test_SelectQueryBuilder_Join(t *testing.T) {
@@ -420,8 +512,10 @@ func Test_SelectQueryBuilder_Join(t *testing.T) {
 		Placeholder(Named).
 		Table("users").
 		Join(LeftJoin, "tasks", joinFields, joinFields).
+		Join(RightJoin, "tasks", joinFields, joinFields).
+		Join(InnerJoin, "tasks", joinFields, joinFields).
 		Build()
-	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id;"
+	expected := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id RIGHT JOIN tasks ON users.user_id = tasks.user_id INNER JOIN tasks ON users.user_id = tasks.user_id;"
 	if err := checkQuery(expected, q); err != nil {
 		t.Log(err)
 		t.Fail()
@@ -437,9 +531,11 @@ func Test_SelectQueryBuilder_Join(t *testing.T) {
 		Placeholder(Named).
 		Table("users").
 		Join(LeftJoin, "tasks", joinFields2, joinFields2).
+		Join(RightJoin, "tasks", joinFields2, joinFields2).
+		Join(InnerJoin, "tasks", joinFields2, joinFields2).
 		Join(LeftJoin, "subtasks", joinFields3, joinFields3, "tasks").
 		Build()
-	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id LEFT JOIN subtasks ON tasks.task_id = subtasks.task_id;"
+	expected2 := "SELECT users.* FROM users LEFT JOIN tasks ON users.user_id = tasks.user_id RIGHT JOIN tasks ON users.user_id = tasks.user_id INNER JOIN tasks ON users.user_id = tasks.user_id LEFT JOIN subtasks ON tasks.task_id = subtasks.task_id;"
 	if err := checkQuery(expected2, q2); err != nil {
 		t.Log(err)
 		t.Fail()
@@ -448,8 +544,6 @@ func Test_SelectQueryBuilder_Join(t *testing.T) {
 		t.Log(err)
 		t.Fail()
 	}
-
-	// TODO add other joins
 }
 
 func Test_SelectQueryBuilder_JoinMultipleFields(t *testing.T) {
@@ -507,24 +601,27 @@ func Test_SelectQueryBuilder_SubQuery(t *testing.T) {
 }
 
 func Test_SelectQueryBuilder_DoubleSubQuery(t *testing.T) {
+	sub2 := NewSelectQueryBuilder().
+		Table("users").
+		Column("user_id").
+		Limit()
+
+	sub1 := NewSelectQueryBuilder().
+		Table("users").
+		Column("user_id").
+		WhereSubQuery("user_id", Equal, sub2).
+		Limit()
+
 	q := NewSelectQueryBuilder().
 		Table("users").
 		WhereSubQuery(
 			"user_id",
 			Equal,
-			NewSelectQueryBuilder().
-				Table("users").
-				Column("user_id").
-				WhereSubQuery(
-					"user_id",
-					Equal,
-					NewSelectQueryBuilder().
-						Table("users").
-						Column("user_id")),
+			sub1,
 		).
 		Build()
 
-	expected := "SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users WHERE user_id = (SELECT users.user_id FROM users));"
+	expected := "SELECT users.* FROM users WHERE user_id = (SELECT users.user_id FROM users WHERE user_id = (SELECT users.user_id FROM users LIMIT ?) LIMIT ?);"
 	if err := checkQuery(expected, q); err != nil {
 		t.Log(err)
 		t.Fail()
