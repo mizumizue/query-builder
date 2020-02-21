@@ -48,19 +48,26 @@ func (builder *queryBuilder) model(model interface{}) *queryBuilder {
 	t := reflect.TypeOf(model)
 
 	if t.Kind() == reflect.Ptr {
-		panic("model should be not pointer value")
+		t = t.Elem()
 	}
+
 	if t.Kind() != reflect.Struct {
 		panic("model should be struct")
 	}
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		dbTag := field.Tag.Get("db")
-		tableTag := field.Tag.Get("table")
-		if dbTag != "" && tableTag == builder.tableName {
-			copied.columns = append(copied.columns, dbTag)
+		dbTag, tableTag := field.Tag.Get(DBTag), field.Tag.Get(TableTag)
+
+		if dbTag == "" {
+			continue
 		}
+
+		if tableTag != builder.tableName {
+			continue
+		}
+
+		copied.columns = append(copied.columns, dbTag)
 	}
 	return copied
 }

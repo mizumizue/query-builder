@@ -34,6 +34,7 @@ const (
 
 const (
 	DBTag       = "db"
+	TableTag    = "table"
 	SearchTag   = "search"
 	OperatorTag = "operator"
 )
