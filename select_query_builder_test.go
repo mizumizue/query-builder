@@ -14,122 +14,92 @@ type User struct {
 }
 
 func Test_SelectQueryBuilder_OnlyTable(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Build()
-
-	expected := "SELECT users.* FROM users;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users;",
+		NewSelectQueryBuilder().Table("users").Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Model(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Model(User{}).
-		Build()
+	testCommonFunc(
+		t,
+		"SELECT users.user_id, users.name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Model(User{}).
+			Build(),
+		true,
+	)
 
-	expected := "SELECT users.user_id, users.name, users.age, users.sex FROM users;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.user_id, users.name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Model(&User{}).
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Column(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Column("name", "age", "sex").
-		Build()
-	expected := "SELECT users.name, users.age, users.sex FROM users;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Column("name", "age", "sex").
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Column_DBMethod(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Column("COALESCE(name, 0) as name", "age", "sex").
-		Build()
-
-	expected := "SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;"
-	if q != expected {
-		t.Logf("expected: %s, acctual: %s", expected, q)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Column("COALESCE(name, 0) as name", "age", "sex").
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_OrderBy(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		OrderBy("created", Asc).
-		Build()
-	expected := "SELECT users.* FROM users ORDER BY created ASC;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users ORDER BY created ASC;",
+		NewSelectQueryBuilder().
+			Table("users").
+			OrderBy("created", Asc).
+			Build(),
+		true,
+	)
 
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	q2 := NewSelectQueryBuilder().
-		Table("users").
-		OrderBy("created, user_id", Desc).
-		Build()
-	expected2 := "SELECT users.* FROM users ORDER BY created, user_id DESC;"
-	if err := checkQuery(expected2, q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users ORDER BY created, user_id DESC;",
+		NewSelectQueryBuilder().
+			Table("users").
+			OrderBy("created, user_id", Desc).
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_GroupBy(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		GroupBy("user_id").
-		Build()
-
-	expected := "SELECT users.* FROM users GROUP BY user_id;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users GROUP BY user_id;",
+		NewSelectQueryBuilder().
+			Table("users").
+			GroupBy("user_id").
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Limit(t *testing.T) {
