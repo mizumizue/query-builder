@@ -66,9 +66,9 @@ NewSelectQueryBuilder().Table("users").Limit().Offset().Build()
 NewSelectQueryBuilder().
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
@@ -79,9 +79,9 @@ NewSelectQueryBuilder().
     Placeholder(Named).
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
@@ -92,8 +92,8 @@ NewSelectQueryBuilder().
     Placeholder(Named).
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual, "age1").
-    Where("age", LessEqual, "age2").
+    Where("age", GraterThanEqual, "age1").
+    Where("age", LessThanEqual, "age2").
     Where("sex", Not, "sex1").
     Where("age", LessThan, "age3").
     Where("age", GraterThan, "age4").
@@ -242,9 +242,9 @@ NewUpdateQueryBuilder().
     Table("users").
     Column("name", "age", "sex").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
@@ -282,9 +282,9 @@ NewDeleteQueryBuilder().
 NewDeleteQueryBuilder().
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
