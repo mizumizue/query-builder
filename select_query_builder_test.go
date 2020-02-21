@@ -434,6 +434,80 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 
 func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 	type SearchMachinesParameter struct { //ex Tagged struct
+		MachineNumber int       `db:"machine_number" search:"machine_number" operator:"eq"`
+		MachineName   string    `db:"machine_name" search:"machine_name" operator:"eq"`
+		BuyDateFrom   time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
+		BuyDateTo     time.Time `db:"buy_date" search:"buy_date_to" operator:"lt"`
+		PriceFrom     int       `db:"price" search:"price_from" operator:"gt"`
+		PriceTo       int       `db:"price" search:"price_to" operator:"lte"`
+		Owner         string    `db:"owner" search:"owner" operator:"ne"`
+	}
+
+	machineNumber := 150
+	machineName := "machine1"
+	price := 1000
+	now := time.Now()
+	owner := "owner1"
+
+	searchParam := SearchMachinesParameter{
+		MachineNumber: machineNumber,
+		MachineName:   machineName,
+		BuyDateFrom:   now,
+		BuyDateTo:     now,
+		PriceFrom:     price,
+		PriceTo:       price,
+		Owner:         owner,
+	}
+
+	q := NewSelectQueryBuilder().
+		Placeholder(Named).
+		Table("machines").
+		WhereMultiByStruct(searchParam).
+		Build()
+
+	expected := "SELECT machines.* FROM " +
+		"machines " +
+		"WHERE machine_number = :machine_number " +
+		"AND machine_name = :machine_name " +
+		"AND buy_date >= :buy_date_from " +
+		"AND buy_date < :buy_date_to " +
+		"AND price > :price_from " +
+		"AND price <= :price_to " +
+		"AND owner != :owner;"
+
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	q2 := NewSelectQueryBuilder().
+		Placeholder(DollarNumber).
+		Table("machines").
+		WhereMultiByStruct(searchParam).
+		Build()
+
+	expected2 := "SELECT machines.* FROM " +
+		"machines " +
+		"WHERE machine_number = $1 " +
+		"AND machine_name = $2 " +
+		"AND buy_date >= $3 " +
+		"AND buy_date < $4 " +
+		"AND price > $5 " +
+		"AND price <= $6 " +
+		"AND owner != $7;"
+
+	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
+func Test_SelectQueryBuilder_WhereMultiByStructPtr(t *testing.T) {
+	type SearchMachinesParameter struct { //ex Tagged struct
 		MachineNumber *int       `db:"machine_number" search:"machine_number" operator:"eq"`
 		MachineName   *string    `db:"machine_name" search:"machine_name" operator:"eq"`
 		BuyDateFrom   *time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
