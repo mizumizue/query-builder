@@ -1,16 +1,18 @@
 package query_builder
 
 const (
-	Equal       = "="
-	GraterThan  = ">"
-	GraterEqual = ">="
-	LessThan    = "<"
-	LessEqual   = "<="
-	Not         = "!="
-	In          = "IN"
-	NotIn       = "NOT IN"
-	Like        = "LIKE"
-	NotLike     = "NOT LIKE"
+	Equal           = "="           // tag.operator.eq
+	GraterThan      = ">"           // tag.operator.gt
+	GraterThanEqual = ">="          // tag.operator.gte
+	LessThan        = "<"           // tag.operator.lt
+	LessThanEqual   = "<="          // tag.operator.lte
+	NotEqual        = "!="          // tag.operator.ne
+	Like            = "LIKE"        // tag.operator.like
+	NotLike         = "NOT LIKE"    // tag.operator.not-like
+	IsNull          = "IS NULL"     // tag.operator.is-null
+	IsNotNull       = "IS NOT NULL" // tag.operator.not-null
+	In              = "IN"
+	NotIn           = "NOT IN"
 )
 
 const (
@@ -28,4 +30,11 @@ const (
 const (
 	Asc  = "ASC"
 	Desc = "DESC"
+)
+
+const (
+	DBTag       = "db"
+	TableTag    = "table"
+	SearchTag   = "search"
+	OperatorTag = "operator"
 )

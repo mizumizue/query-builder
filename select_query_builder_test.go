@@ -14,122 +14,92 @@ type User struct {
 }
 
 func Test_SelectQueryBuilder_OnlyTable(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Build()
-
-	expected := "SELECT users.* FROM users;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users;",
+		NewSelectQueryBuilder().Table("users").Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Model(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Model(User{}).
-		Build()
+	testCommonFunc(
+		t,
+		"SELECT users.user_id, users.name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Model(User{}).
+			Build(),
+		true,
+	)
 
-	expected := "SELECT users.user_id, users.name, users.age, users.sex FROM users;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.user_id, users.name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Model(&User{}).
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Column(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Column("name", "age", "sex").
-		Build()
-	expected := "SELECT users.name, users.age, users.sex FROM users;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Column("name", "age", "sex").
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Column_DBMethod(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Column("COALESCE(name, 0) as name", "age", "sex").
-		Build()
-
-	expected := "SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;"
-	if q != expected {
-		t.Logf("expected: %s, acctual: %s", expected, q)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Column("COALESCE(name, 0) as name", "age", "sex").
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_OrderBy(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		OrderBy("created", Asc).
-		Build()
-	expected := "SELECT users.* FROM users ORDER BY created ASC;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users ORDER BY created ASC;",
+		NewSelectQueryBuilder().
+			Table("users").
+			OrderBy("created", Asc).
+			Build(),
+		true,
+	)
 
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	q2 := NewSelectQueryBuilder().
-		Table("users").
-		OrderBy("created, user_id", Desc).
-		Build()
-	expected2 := "SELECT users.* FROM users ORDER BY created, user_id DESC;"
-	if err := checkQuery(expected2, q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users ORDER BY created, user_id DESC;",
+		NewSelectQueryBuilder().
+			Table("users").
+			OrderBy("created, user_id", Desc).
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_GroupBy(t *testing.T) {
-	q := NewSelectQueryBuilder().
-		Table("users").
-		GroupBy("user_id").
-		Build()
-
-	expected := "SELECT users.* FROM users GROUP BY user_id;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users GROUP BY user_id;",
+		NewSelectQueryBuilder().
+			Table("users").
+			GroupBy("user_id").
+			Build(),
+		true,
+	)
 }
 
 func Test_SelectQueryBuilder_Limit(t *testing.T) {
@@ -263,9 +233,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal).
 		Where("name", Like).
 		Where("name", NotLike).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -285,9 +255,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal).
 		Where("name", Like).
 		Where("name", NotLike).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -307,9 +277,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal, "name1").
 		Where("name", Like, "name2").
 		Where("name", NotLike, "name3").
-		Where("age", GraterEqual, "age1").
-		Where("age", LessEqual, "age2").
-		Where("sex", Not, "sex1").
+		Where("age", GraterThanEqual, "age1").
+		Where("age", LessThanEqual, "age2").
+		Where("sex", NotEqual, "sex1").
 		Where("age", LessThan, "age3").
 		Where("age", GraterThan, "age4").
 		Build()
@@ -329,9 +299,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal).
 		Where("name", Like).
 		Where("name", NotLike).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -434,13 +404,87 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 
 func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 	type SearchMachinesParameter struct { //ex Tagged struct
-		MachineNumber *int       `search:"machine_number" operator:"eq"`
-		MachineName   *string    `search:"machine_name" operator:"eq"`
-		BuyDateFrom   *time.Time `search:"buy_date" operator:"ge"`
-		BuyDateTo     *time.Time `search:"buy_date" operator:"lt"`
-		PriceFrom     *int       `search:"price" operator:"gt"`
-		PriceTo       *int       `search:"price" operator:"le"`
-		Owner         *string    `search:"owner" operator:"not"`
+		MachineNumber int       `db:"machine_number" search:"machine_number" operator:"eq"`
+		MachineName   string    `db:"machine_name" search:"machine_name" operator:"eq"`
+		BuyDateFrom   time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
+		BuyDateTo     time.Time `db:"buy_date" search:"buy_date_to" operator:"lt"`
+		PriceFrom     int       `db:"price" search:"price_from" operator:"gt"`
+		PriceTo       int       `db:"price" search:"price_to" operator:"lte"`
+		Owner         string    `db:"owner" search:"owner" operator:"ne"`
+	}
+
+	machineNumber := 150
+	machineName := "machine1"
+	price := 1000
+	now := time.Now()
+	owner := "owner1"
+
+	searchParam := SearchMachinesParameter{
+		MachineNumber: machineNumber,
+		MachineName:   machineName,
+		BuyDateFrom:   now,
+		BuyDateTo:     now,
+		PriceFrom:     price,
+		PriceTo:       price,
+		Owner:         owner,
+	}
+
+	q := NewSelectQueryBuilder().
+		Placeholder(Named).
+		Table("machines").
+		WhereMultiByStruct(searchParam).
+		Build()
+
+	expected := "SELECT machines.* FROM " +
+		"machines " +
+		"WHERE machine_number = :machine_number " +
+		"AND machine_name = :machine_name " +
+		"AND buy_date >= :buy_date_from " +
+		"AND buy_date < :buy_date_to " +
+		"AND price > :price_from " +
+		"AND price <= :price_to " +
+		"AND owner != :owner;"
+
+	if err := checkQuery(expected, q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	if err := checkSqlSyntax(q); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+
+	q2 := NewSelectQueryBuilder().
+		Placeholder(DollarNumber).
+		Table("machines").
+		WhereMultiByStruct(searchParam).
+		Build()
+
+	expected2 := "SELECT machines.* FROM " +
+		"machines " +
+		"WHERE machine_number = $1 " +
+		"AND machine_name = $2 " +
+		"AND buy_date >= $3 " +
+		"AND buy_date < $4 " +
+		"AND price > $5 " +
+		"AND price <= $6 " +
+		"AND owner != $7;"
+
+	if err := checkQuery(expected2, q2); err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+}
+
+func Test_SelectQueryBuilder_WhereMultiByStructPtr(t *testing.T) {
+	type SearchMachinesParameter struct { //ex Tagged struct
+		MachineNumber *int       `db:"machine_number" search:"machine_number" operator:"eq"`
+		MachineName   *string    `db:"machine_name" search:"machine_name" operator:"eq"`
+		BuyDateFrom   *time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
+		BuyDateTo     *time.Time `db:"buy_date" search:"buy_date_to" operator:"lt"`
+		PriceFrom     *int       `db:"price" search:"price_from" operator:"gt"`
+		PriceTo       *int       `db:"price" search:"price_to" operator:"lte"`
+		Owner         *string    `db:"owner" search:"owner" operator:"ne"`
 	}
 
 	machineNumber := 150
