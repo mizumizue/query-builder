@@ -42,9 +42,9 @@ func Test_UpdateQueryBuilder_Where(t *testing.T) {
 		Table("users").
 		Column("name", "age", "sex").
 		Where("name", Equal).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -64,9 +64,9 @@ func Test_UpdateQueryBuilder_Where(t *testing.T) {
 		Table("users").
 		Column("name", "age", "sex").
 		Where("name", Equal).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()

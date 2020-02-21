@@ -22,9 +22,9 @@ func Test_DeleteQueryBuilder_Where(t *testing.T) {
 	q := NewDeleteQueryBuilder().
 		Table("users").
 		Where("name", Equal).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -43,9 +43,9 @@ func Test_DeleteQueryBuilder_Where(t *testing.T) {
 		Placeholder(Named).
 		Table("users").
 		Where("name", Equal).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()

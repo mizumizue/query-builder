@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-
-	"github.com/trewanek/query-builder/object_parser"
 )
 
 var (
@@ -50,19 +48,26 @@ func (builder *queryBuilder) model(model interface{}) *queryBuilder {
 	t := reflect.TypeOf(model)
 
 	if t.Kind() == reflect.Ptr {
-		panic("model should be not pointer value")
+		t = t.Elem()
 	}
+
 	if t.Kind() != reflect.Struct {
 		panic("model should be struct")
 	}
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		dbTag := field.Tag.Get("db")
-		tableTag := field.Tag.Get("table")
-		if dbTag != "" && tableTag == builder.tableName {
-			copied.columns = append(copied.columns, dbTag)
+		dbTag, tableTag := field.Tag.Get(DBTag), field.Tag.Get(TableTag)
+
+		if dbTag == "" {
+			continue
 		}
+
+		if tableTag != builder.tableName {
+			continue
+		}
+
+		copied.columns = append(copied.columns, dbTag)
 	}
 	return copied
 }
@@ -113,25 +118,13 @@ func (builder *queryBuilder) whereNotIn(column string, listLength int, bind ...s
 	return copied
 }
 
-func (builder *queryBuilder) whereMultiByStruct(src interface{}) *queryBuilder {
+func (builder *queryBuilder) whereMultiByStruct(targetTag string, src interface{}) *queryBuilder {
 	copied := builder.copy()
-
-	searchMap := object_parser.NewObjectParser(src).SearchBindMap()
+	searchMap := builder.buildBindMap(targetTag, src)
 	for _, info := range searchMap {
-		var op string
-		switch info["operator"] {
-		case "eq":
-			op = Equal
-		case "lt":
-			op = LessThan
-		case "le":
-			op = LessEqual
-		case "gt":
-			op = GraterThan
-		case "ge":
-			op = GraterEqual
-		case "not":
-			op = Not
+		op := getOperatorFromTag(info["operator"])
+		if op == "" {
+			continue
 		}
 		copied = copied.where(info["target"], op, info["bind"])
 	}
@@ -229,4 +222,78 @@ func (builder *queryBuilder) buildListBind(bind string, listLength int) string {
 		list = append(list, bind)
 	}
 	return fmt.Sprintf(format, strings.Join(list, ", "))
+}
+
+func getOperatorFromTag(tag string) string {
+	switch tag {
+	case "eq":
+		return Equal
+	case "gt":
+		return GraterThan
+	case "gte":
+		return GraterThanEqual
+	case "lt":
+		return LessThan
+	case "lte":
+		return LessThanEqual
+	case "ne":
+		return NotEqual
+	case "like":
+		return Like
+	case "not-like":
+		return NotLike
+	case "is-null":
+		return IsNull
+	case "not-null":
+		return IsNotNull
+	default:
+		return ""
+	}
+}
+
+func (builder *queryBuilder) buildBindMap(targetTag string, src interface{}) []map[string]string {
+	t, v := builder.getReflectTypeAndValue(src)
+	bindMap := make(map[string]map[string]string)
+	dic := make([]string, 0, t.NumField())
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		fieldValue := v.Field(i)
+
+		if fieldValue.Type().Kind() == reflect.Ptr && v.Field(i).IsNil() {
+			continue
+		}
+
+		dbTag, bindTag, operatorTag := field.Tag.Get(DBTag), field.Tag.Get(targetTag), field.Tag.Get(OperatorTag)
+		if dbTag == "" || bindTag == "" || operatorTag == "" {
+			continue
+		}
+
+		dic = append(dic, bindTag)
+		bindMap[bindTag] = map[string]string{
+			"target":   dbTag,
+			"operator": operatorTag,
+		}
+	}
+
+	sortedByFieldNumber := make([]map[string]string, 0, len(dic))
+	for _, key := range dic {
+		bindMap[key]["bind"] = key
+		sortedByFieldNumber = append(sortedByFieldNumber, bindMap[key])
+	}
+	return sortedByFieldNumber
+}
+
+func (builder *queryBuilder) getReflectTypeAndValue(src interface{}) (reflect.Type, reflect.Value) {
+	t := reflect.TypeOf(src)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	v := reflect.ValueOf(src)
+	if v.Type().Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	return t, v
 }

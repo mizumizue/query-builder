@@ -66,9 +66,9 @@ NewSelectQueryBuilder().Table("users").Limit().Offset().Build()
 NewSelectQueryBuilder().
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
@@ -79,9 +79,9 @@ NewSelectQueryBuilder().
     Placeholder(Named).
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
@@ -92,8 +92,8 @@ NewSelectQueryBuilder().
     Placeholder(Named).
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual, "age1").
-    Where("age", LessEqual, "age2").
+    Where("age", GraterThanEqual, "age1").
+    Where("age", LessThanEqual, "age2").
     Where("sex", Not, "sex1").
     Where("age", LessThan, "age3").
     Where("age", GraterThan, "age4").
@@ -137,13 +137,13 @@ NewSelectQueryBuilder().
 # SELECT machines.* FROM machines WHERE machine_number = :machine_number AND machine_name = :machine_name AND buy_date >= :buy_date_from AND buy_date < :buy_date_to AND price > :price_from AND price <= :price_to AND owner != :owner;
 # Ex Struct
 type SearchMachinesParameter struct { //ex Tagged struct
-    MachineNumber *int       `search:"machine_number" operator:"eq"`
-    MachineName   *string    `search:"machine_name" operator:"eq"`
-    BuyDateFrom   *time.Time `search:"buy_date" operator:"ge"`
-    BuyDateTo     *time.Time `search:"buy_date" operator:"lt"`
-    PriceFrom     *int       `search:"price" operator:"gt"`
-    PriceTo       *int       `search:"price" operator:"le"`
-    Owner         *string    `search:"owner" operator:"not"`
+    MachineNumber int       `db:"machine_number" search:"machine_number" operator:"eq"`
+    MachineName   string    `db:"machine_name" search:"machine_name" operator:"eq"`
+    BuyDateFrom   time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
+    BuyDateTo     time.Time `db:"buy_date" search:"buy_date_to" operator:"lt"`
+    PriceFrom     int       `db:"price" search:"price_from" operator:"gt"`
+    PriceTo       int       `db:"price" search:"price_to" operator:"lte"`
+    Owner         string    `db:"owner" search:"owner" operator:"ne"`
 }
 NewSelectQueryBuilder().
     Placeholder(Named).
@@ -242,9 +242,9 @@ NewUpdateQueryBuilder().
     Table("users").
     Column("name", "age", "sex").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
@@ -282,9 +282,9 @@ NewDeleteQueryBuilder().
 NewDeleteQueryBuilder().
     Table("users").
     Where("name", Equal).
-    Where("age", GraterEqual).
-    Where("age", LessEqual).
-    Where("sex", Not).
+    Where("age", GraterThanEqual).
+    Where("age", LessThanEqual).
+    Where("sex", NotEqual).
     Where("age", LessThan).
     Where("age", GraterThan).
     Build()
