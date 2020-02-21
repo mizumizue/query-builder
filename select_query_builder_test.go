@@ -263,9 +263,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal).
 		Where("name", Like).
 		Where("name", NotLike).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -285,9 +285,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal).
 		Where("name", Like).
 		Where("name", NotLike).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -307,9 +307,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal, "name1").
 		Where("name", Like, "name2").
 		Where("name", NotLike, "name3").
-		Where("age", GraterEqual, "age1").
-		Where("age", LessEqual, "age2").
-		Where("sex", Not, "sex1").
+		Where("age", GraterThanEqual, "age1").
+		Where("age", LessThanEqual, "age2").
+		Where("sex", NotEqual, "sex1").
 		Where("age", LessThan, "age3").
 		Where("age", GraterThan, "age4").
 		Build()
@@ -329,9 +329,9 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 		Where("name", Equal).
 		Where("name", Like).
 		Where("name", NotLike).
-		Where("age", GraterEqual).
-		Where("age", LessEqual).
-		Where("sex", Not).
+		Where("age", GraterThanEqual).
+		Where("age", LessThanEqual).
+		Where("sex", NotEqual).
 		Where("age", LessThan).
 		Where("age", GraterThan).
 		Build()
@@ -434,13 +434,13 @@ func Test_SelectQueryBuilder_WhereNotIn(t *testing.T) {
 
 func Test_SelectQueryBuilder_WhereMultiByStruct(t *testing.T) {
 	type SearchMachinesParameter struct { //ex Tagged struct
-		MachineNumber *int       `search:"machine_number" operator:"eq"`
-		MachineName   *string    `search:"machine_name" operator:"eq"`
-		BuyDateFrom   *time.Time `search:"buy_date" operator:"ge"`
-		BuyDateTo     *time.Time `search:"buy_date" operator:"lt"`
-		PriceFrom     *int       `search:"price" operator:"gt"`
-		PriceTo       *int       `search:"price" operator:"le"`
-		Owner         *string    `search:"owner" operator:"not"`
+		MachineNumber *int       `db:"machine_number" search:"machine_number" operator:"eq"`
+		MachineName   *string    `db:"machine_name" search:"machine_name" operator:"eq"`
+		BuyDateFrom   *time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
+		BuyDateTo     *time.Time `db:"buy_date" search:"buy_date_to" operator:"lt"`
+		PriceFrom     *int       `db:"price" search:"price_from" operator:"gt"`
+		PriceTo       *int       `db:"price" search:"price_to" operator:"lte"`
+		Owner         *string    `db:"owner" search:"owner" operator:"ne"`
 	}
 
 	machineNumber := 150

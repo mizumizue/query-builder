@@ -106,9 +106,20 @@ func (builder *SelectQueryBuilder) WhereSubQuery(column, operator string, subQue
 	return copied
 }
 
+// `Select Query Builder` refer tag.search
+// example struct
+//type SearchMachinesParameter struct { //ex Tagged struct
+//	MachineNumber *int       `db:"machine_number" search:"machine_number" operator:"eq"`
+//	MachineName   *string    `db:"machine_name" search:"machine_name" operator:"eq"`
+//	BuyDateFrom   *time.Time `db:"buy_date" search:"buy_date_from" operator:"gte"`
+//	BuyDateTo     *time.Time `db:"buy_date" search:"buy_date_to" operator:"lt"`
+//	PriceFrom     *int       `db:"price" search:"price_from" operator:"gt"`
+//	PriceTo       *int       `db:"price" search:"price_to" operator:"lte"`
+//	Owner         *string    `db:"owner" search:"owner" operator:"ne"`
+//}
 func (builder *SelectQueryBuilder) WhereMultiByStruct(src interface{}) *SelectQueryBuilder {
 	copied := builder.copy()
-	copied.queryBuilder = builder.whereMultiByStruct(src)
+	copied.queryBuilder = builder.whereMultiByStruct(SearchTag, src)
 	return copied
 }
 
