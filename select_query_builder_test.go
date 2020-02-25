@@ -59,10 +59,20 @@ func Test_SelectQueryBuilder_Column(t *testing.T) {
 func Test_SelectQueryBuilder_Column_DBMethod(t *testing.T) {
 	testCommonFunc(
 		t,
-		"SELECT COALESCE(name, 0) as name, users.age, users.sex FROM users;",
+		"SELECT users.user_id, COALESCE(name, '') as name, users.age, users.sex FROM users;",
 		NewSelectQueryBuilder().
 			Table("users").
-			Column("COALESCE(name, 0) as name", "age", "sex").
+			Column("user_id", "COALESCE(name, '') as name", "age", "sex").
+			Build(),
+		true,
+	)
+
+	testCommonFunc(
+		t,
+		"SELECT users.user_id, COALESCE(name, '') as name FROM users;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Column("user_id", "COALESCE(name, '') as name").
 			Build(),
 		true,
 	)
@@ -228,88 +238,124 @@ func Test_SelectQueryBuilder_OrderBy_GroupBy_Limit_Offset(t *testing.T) {
 
 func Test_SelectQueryBuilder_Where(t *testing.T) {
 	// ? bind
-	q := NewSelectQueryBuilder().
-		Table("users").
-		Where("name", Equal).
-		Where("name", Like).
-		Where("name", NotLike).
-		Where("age", GraterThanEqual).
-		Where("age", LessThanEqual).
-		Where("sex", NotEqual).
-		Where("age", LessThan).
-		Where("age", GraterThan).
-		Build()
-	expected := "SELECT users.* FROM users WHERE name = ? AND name LIKE ? AND name NOT LIKE ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users "+
+			"WHERE name = ? "+
+			"AND name LIKE ? "+
+			"AND name NOT LIKE ? "+
+			"AND age >= ? "+
+			"AND age <= ? "+
+			"AND sex != ? "+
+			"AND age < ? "+
+			"AND age > ? "+
+			"AND age IS NULL "+
+			"AND age IS NOT NULL;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Where("name", Equal).
+			Where("name", Like).
+			Where("name", NotLike).
+			Where("age", GraterThanEqual).
+			Where("age", LessThanEqual).
+			Where("sex", NotEqual).
+			Where("age", LessThan).
+			Where("age", GraterThan).
+			Where("age", IsNull).
+			Where("age", IsNotNull).
+			Build(),
+		true,
+	)
 
 	// column name bind
-	q2 := NewSelectQueryBuilder().Table("users").
-		Placeholder(Named).
-		Where("name", Equal).
-		Where("name", Like).
-		Where("name", NotLike).
-		Where("age", GraterThanEqual).
-		Where("age", LessThanEqual).
-		Where("sex", NotEqual).
-		Where("age", LessThan).
-		Where("age", GraterThan).
-		Build()
-	expected2 := "SELECT users.* FROM users WHERE name = :name AND name LIKE :name AND name NOT LIKE :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;"
-	if err := checkQuery(expected2, q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users "+
+			"WHERE name = :name "+
+			"AND name LIKE :name "+
+			"AND name NOT LIKE :name "+
+			"AND age >= :age "+
+			"AND age <= :age "+
+			"AND sex != :sex "+
+			"AND age < :age "+
+			"AND age > :age "+
+			"AND age IS NULL "+
+			"AND age IS NOT NULL;",
+		NewSelectQueryBuilder().Table("users").
+			Placeholder(Named).
+			Where("name", Equal).
+			Where("name", Like).
+			Where("name", NotLike).
+			Where("age", GraterThanEqual).
+			Where("age", LessThanEqual).
+			Where("sex", NotEqual).
+			Where("age", LessThan).
+			Where("age", GraterThan).
+			Where("age", IsNull).
+			Where("age", IsNotNull).
+			Build(),
+		true,
+	)
 
 	// custom name bind
-	q3 := NewSelectQueryBuilder().Table("users").
-		Placeholder(Named).
-		Where("name", Equal, "name1").
-		Where("name", Like, "name2").
-		Where("name", NotLike, "name3").
-		Where("age", GraterThanEqual, "age1").
-		Where("age", LessThanEqual, "age2").
-		Where("sex", NotEqual, "sex1").
-		Where("age", LessThan, "age3").
-		Where("age", GraterThan, "age4").
-		Build()
-	expected3 := "SELECT users.* FROM users WHERE name = :name1 AND name LIKE :name2 AND name NOT LIKE :name3 AND age >= :age1 AND age <= :age2 AND sex != :sex1 AND age < :age3 AND age > :age4;"
-	if err := checkQuery(expected3, q3); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q3); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users "+
+			"WHERE name = :name1 "+
+			"AND name LIKE :name2 "+
+			"AND name NOT LIKE :name3 "+
+			"AND age >= :age1 "+
+			"AND age <= :age2 "+
+			"AND sex != :sex1 "+
+			"AND age < :age3 "+
+			"AND age > :age4 "+
+			"AND age IS NULL "+
+			"AND age IS NOT NULL;",
+		NewSelectQueryBuilder().Table("users").
+			Placeholder(Named).
+			Where("name", Equal, "name1").
+			Where("name", Like, "name2").
+			Where("name", NotLike, "name3").
+			Where("age", GraterThanEqual, "age1").
+			Where("age", LessThanEqual, "age2").
+			Where("sex", NotEqual, "sex1").
+			Where("age", LessThan, "age3").
+			Where("age", GraterThan, "age4").
+			Where("age", IsNull, "age5").
+			Where("age", IsNotNull, "age6").
+			Build(),
+		true,
+	)
 
 	// column name bind
-	q4 := NewSelectQueryBuilder().Table("users").
-		Placeholder(DollarNumber).
-		Where("name", Equal).
-		Where("name", Like).
-		Where("name", NotLike).
-		Where("age", GraterThanEqual).
-		Where("age", LessThanEqual).
-		Where("sex", NotEqual).
-		Where("age", LessThan).
-		Where("age", GraterThan).
-		Build()
-	expected4 := "SELECT users.* FROM users WHERE name = $1 AND name LIKE $2 AND name NOT LIKE $3 AND age >= $4 AND age <= $5 AND sex != $6 AND age < $7 AND age > $8;"
-	if err := checkQuery(expected4, q4); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users "+
+			"WHERE name = $1 "+
+			"AND name LIKE $2 "+
+			"AND name NOT LIKE $3 "+
+			"AND age >= $4 "+
+			"AND age <= $5 "+
+			"AND sex != $6 "+
+			"AND age < $7 "+
+			"AND age > $8 "+
+			"AND age IS NULL "+
+			"AND age IS NOT NULL;",
+		NewSelectQueryBuilder().Table("users").
+			Placeholder(DollarNumber).
+			Where("name", Equal).
+			Where("name", Like).
+			Where("name", NotLike).
+			Where("age", GraterThanEqual).
+			Where("age", LessThanEqual).
+			Where("sex", NotEqual).
+			Where("age", LessThan).
+			Where("age", GraterThan).
+			Where("age", IsNull).
+			Where("age", IsNotNull).
+			Build(),
+		false,
+	)
 }
 
 func Test_SelectQueryBuilder_WhereIn(t *testing.T) {

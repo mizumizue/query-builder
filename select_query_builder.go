@@ -202,41 +202,37 @@ func (builder *SelectQueryBuilder) Build() string {
 }
 
 func (builder *SelectQueryBuilder) getSelectParagraphs(tableName string, columns []string) []string {
-	paragraph := make([]string, 0, 0)
-	paragraph = append(paragraph, "SELECT")
+	paragraphs := make([]string, 0, 0)
+	paragraphs = append(paragraphs, "SELECT")
 
 	if len(columns) == 0 {
-		paragraph = append(paragraph, tableName+".*")
-		paragraph = append(paragraph, "FROM", tableName)
-		return paragraph
+		paragraphs = append(paragraphs, tableName+".*")
+		paragraphs = append(paragraphs, "FROM", tableName)
+		return paragraphs
 	}
 
 	format := "%s.%s,"
 	for index, column := range columns {
-		if index == len(columns)-1 {
-			format = strings.TrimRight(format, ",")
-		}
-
-		table := tableName
-		selectColumn := column
+		table, selectColumn := tableName, column
 		split := strings.Split(column, ".")
 		if len(split) > 1 {
-			table = split[0]
-			selectColumn = split[1]
+			table, selectColumn = split[0], split[1]
 		}
 
+		var paragraph string
 		if regexp.MustCompile(`^.*\(.*\)`).Match([]byte(column)) {
-			paragraph = append(paragraph, fmt.Sprintf("%s,", selectColumn))
-			continue
+			paragraph = fmt.Sprintf("%s,", selectColumn)
+		} else {
+			paragraph = fmt.Sprintf(format, table, selectColumn)
 		}
 
-		paragraph = append(paragraph, fmt.Sprintf(
-			format,
-			table,
-			selectColumn,
-		))
+		if index == len(columns)-1 {
+			paragraph = strings.TrimRight(paragraph, ",")
+		}
+
+		paragraphs = append(paragraphs, paragraph)
 	}
-	return append(paragraph, "FROM", tableName)
+	return append(paragraphs, "FROM", tableName)
 }
 
 func (builder *SelectQueryBuilder) getJoinParagraphs(tableName string) []string {
