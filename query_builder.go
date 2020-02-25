@@ -165,45 +165,53 @@ func (builder *queryBuilder) copy() *queryBuilder {
 }
 
 func (builder *queryBuilder) getWhereParagraphs() []string {
-	paragraph := make([]string, 0, 0)
-	paragraph = append(paragraph, "WHERE")
+	paragraphs := make([]string, 0, 0)
+	paragraphs = append(paragraphs, "WHERE")
 
-	format := "%s %s %s AND"
 	for index, condition := range builder.whereConditions {
-		if index == len(builder.whereConditions)-1 {
-			format = strings.TrimRight(format, " AND")
-		}
-
-		if condition["subQuery"] != "" {
-			paragraph = append(paragraph, fmt.Sprintf(
-				"%s %s (%s)",
-				condition["column"],
-				condition["operator"],
-				condition["subQuery"],
-			))
-			continue
-		}
-
+		op := condition["operator"]
 		bind := "?"
 		if builder.placeholderType == Named {
 			bind = ":" + condition["bind"]
 		}
-
-		if condition["operator"] == In || condition["operator"] == NotIn {
-			listLength, _ := strconv.Atoi(condition["listLength"])
-			listBind := builder.buildListBind(bind, listLength)
-			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], listBind))
-			continue
-		}
-
 		if builder.placeholderType == DollarNumber {
-			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], "$"+strconv.Itoa(builder.argNum+1)))
-			builder.argNum += 1
-		} else {
-			paragraph = append(paragraph, fmt.Sprintf(format, condition["column"], condition["operator"], bind))
+			bind = "$"
+			if op != In && op != NotIn {
+				bind += strconv.Itoa(builder.argNum + 1)
+				builder.argNum += 1
+			}
 		}
+
+		paragraph := builder.getWhereParagraph(condition, bind)
+
+		if index == len(builder.whereConditions)-1 {
+			paragraph = strings.TrimRight(paragraph, " AND")
+		}
+
+		paragraphs = append(paragraphs, paragraph)
 	}
-	return paragraph
+	return paragraphs
+}
+
+func (builder *queryBuilder) getWhereParagraph(condition map[string]string, bind string) string {
+	baseFormat := "%s %s %s AND"
+	column := condition["column"]
+	op := condition["operator"]
+	sub := condition["subQuery"]
+
+	if sub != "" {
+		return fmt.Sprintf("%s %s (%s)", column, op, sub)
+	}
+
+	switch op {
+	case IsNull, IsNotNull:
+		return fmt.Sprintf("%s %s AND", column, op)
+	case In, NotIn:
+		listLength, _ := strconv.Atoi(condition["listLength"])
+		return fmt.Sprintf(baseFormat, column, op, builder.buildListBind(bind, listLength))
+	default:
+		return fmt.Sprintf(baseFormat, column, op, bind)
+	}
 }
 
 func (builder *queryBuilder) buildListBind(bind string, listLength int) string {
