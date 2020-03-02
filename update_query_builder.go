@@ -11,7 +11,7 @@ type UpdateQueryBuilder struct {
 
 func NewUpdateQueryBuilder() *UpdateQueryBuilder {
 	builder := &UpdateQueryBuilder{}
-	builder.queryBuilder = &queryBuilder{}
+	builder.queryBuilder = newQueryBuilder()
 	builder.placeholderType = Question
 	return builder
 }
@@ -34,9 +34,9 @@ func (builder *UpdateQueryBuilder) Table(tableName string) *UpdateQueryBuilder {
 	return copied
 }
 
-func (builder *UpdateQueryBuilder) Model(src interface{}) *UpdateQueryBuilder {
+func (builder *UpdateQueryBuilder) Model(src interface{}, notIgnoreZeroValue ...bool) *UpdateQueryBuilder {
 	copied := builder.copy()
-	copied.queryBuilder = builder.model(src)
+	copied.queryBuilder = builder.model(src, notIgnoreZeroValue...)
 	return copied
 }
 

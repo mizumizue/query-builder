@@ -20,6 +20,13 @@ type queryBuilder struct {
 	whereConditions []map[string]string
 	placeholderType int
 	argNum          int
+	ignoreZeroValue bool
+}
+
+func newQueryBuilder() *queryBuilder {
+	return &queryBuilder{
+		ignoreZeroValue: true,
+	}
 }
 
 func (builder *queryBuilder) placeholder(placeholderType int) *queryBuilder {
@@ -43,12 +50,21 @@ func (builder *queryBuilder) column(columns ...string) *queryBuilder {
 }
 
 // db・tableタグを見て、FieldをSelect対象としてSet
-func (builder *queryBuilder) model(model interface{}) *queryBuilder {
+func (builder *queryBuilder) model(model interface{}, notIgnoreZeroValue ...bool) *queryBuilder {
+	if notIgnoreZeroValue != nil && notIgnoreZeroValue[0] {
+		builder.ignoreZeroValue = false
+	}
+
 	copied := builder.copy()
 	t := reflect.TypeOf(model)
+	v := reflect.ValueOf(model)
 
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
+	}
+
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
 
 	if t.Kind() != reflect.Struct {
@@ -57,6 +73,7 @@ func (builder *queryBuilder) model(model interface{}) *queryBuilder {
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+		fieldValue := v.Field(i)
 		dbTag, tableTag := field.Tag.Get(DBTag), field.Tag.Get(TableTag)
 
 		if dbTag == "" {
@@ -64,6 +81,20 @@ func (builder *queryBuilder) model(model interface{}) *queryBuilder {
 		}
 
 		if tableTag != builder.tableName {
+			continue
+		}
+
+		if fieldValue.Type().Kind() == reflect.Ptr && fieldValue.IsNil() {
+			continue
+		}
+
+		if fieldValue.Type().Kind() == reflect.Ptr {
+			fieldValue = fieldValue.Elem()
+			continue
+		}
+
+		ok := builder.ignoreZeroValue
+		if ok && fieldValue.IsZero() {
 			continue
 		}
 
@@ -161,6 +192,7 @@ func (builder *queryBuilder) copy() *queryBuilder {
 		columns:         builder.columns,
 		whereConditions: builder.whereConditions,
 		placeholderType: builder.placeholderType,
+		ignoreZeroValue: builder.ignoreZeroValue,
 	}
 }
 

@@ -4,6 +4,28 @@ import (
 	"testing"
 )
 
+func Test_UpdateQueryBuilder_Model(t *testing.T) {
+	testCommonFunc(
+		t,
+		"UPDATE users SET name = ?;",
+		NewUpdateQueryBuilder().
+			Table("users").
+			Model(User{Name: "hoge"}).
+			Build(),
+		true,
+	)
+
+	testCommonFunc(
+		t,
+		"UPDATE users SET user_id = ?, name = ?, age = ?, sex = ?;",
+		NewUpdateQueryBuilder().
+			Table("users").
+			Model(User{Name: "hoge"}, true).
+			Build(),
+		true,
+	)
+}
+
 func Test_UpdateQueryBuilder_Column(t *testing.T) {
 	q := NewUpdateQueryBuilder().
 		Table("users").
@@ -38,48 +60,38 @@ func Test_UpdateQueryBuilder_Column(t *testing.T) {
 }
 
 func Test_UpdateQueryBuilder_Where(t *testing.T) {
-	q := NewUpdateQueryBuilder().
-		Table("users").
-		Column("name", "age", "sex").
-		Where("name", Equal).
-		Where("age", GraterThanEqual).
-		Where("age", LessThanEqual).
-		Where("sex", NotEqual).
-		Where("age", LessThan).
-		Where("age", GraterThan).
-		Build()
+	testCommonFunc(
+		t,
+		"UPDATE users SET name = ?, age = ?, sex = ? WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;",
+		NewUpdateQueryBuilder().
+			Table("users").
+			Column("name", "age", "sex").
+			Where("name", Equal).
+			Where("age", GraterThanEqual).
+			Where("age", LessThanEqual).
+			Where("sex", NotEqual).
+			Where("age", LessThan).
+			Where("age", GraterThan).
+			Build(),
+		true,
+	)
 
-	expected := "UPDATE users SET name = ?, age = ?, sex = ? WHERE name = ? AND age >= ? AND age <= ? AND sex != ? AND age < ? AND age > ?;"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	q2 := NewUpdateQueryBuilder().
-		Placeholder(Named).
-		Table("users").
-		Column("name", "age", "sex").
-		Where("name", Equal).
-		Where("age", GraterThanEqual).
-		Where("age", LessThanEqual).
-		Where("sex", NotEqual).
-		Where("age", LessThan).
-		Where("age", GraterThan).
-		Build()
-
-	expected2 := "UPDATE users SET name = :name, age = :age, sex = :sex WHERE name = :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;"
-	if err := checkQuery(expected2, q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"UPDATE users SET name = :name, age = :age, sex = :sex WHERE name = :name AND age >= :age AND age <= :age AND sex != :sex AND age < :age AND age > :age;",
+		NewUpdateQueryBuilder().
+			Placeholder(Named).
+			Table("users").
+			Column("name", "age", "sex").
+			Where("name", Equal).
+			Where("age", GraterThanEqual).
+			Where("age", LessThanEqual).
+			Where("sex", NotEqual).
+			Where("age", LessThan).
+			Where("age", GraterThan).
+			Build(),
+		true,
+	)
 }
 
 func Test_UpdateQueryBuilder_WhereIn(t *testing.T) {

@@ -11,7 +11,7 @@ type InsertQueryBuilder struct {
 
 func NewInsertQueryBuilder() *InsertQueryBuilder {
 	builder := &InsertQueryBuilder{}
-	builder.queryBuilder = &queryBuilder{}
+	builder.queryBuilder = newQueryBuilder()
 	builder.placeholderType = Question
 	return builder
 }
@@ -34,9 +34,9 @@ func (builder *InsertQueryBuilder) Table(tableName string) *InsertQueryBuilder {
 	return copied
 }
 
-func (builder *InsertQueryBuilder) Model(src interface{}) *InsertQueryBuilder {
+func (builder *InsertQueryBuilder) Model(src interface{}, notIgnoreZeroValue ...bool) *InsertQueryBuilder {
 	copied := builder.copy()
-	copied.queryBuilder = builder.model(src)
+	copied.queryBuilder = builder.model(src, notIgnoreZeroValue...)
 	return copied
 }
 
