@@ -49,6 +49,36 @@ func (builder *queryBuilder) column(columns ...string) *queryBuilder {
 	return copied
 }
 
+func (builder *queryBuilder) omit(targets ...string) *queryBuilder {
+	copied := builder.copy()
+	dic := make([]string, 0, len(copied.columns))
+	m := make(map[string]*string)
+
+	for _, column := range copied.columns {
+		np := column
+		m[column] = &np
+		dic = append(dic, column)
+	}
+
+	for _, target := range targets {
+		if m[target] == nil {
+			continue
+		}
+		delete(m, target)
+	}
+
+	sorted := make([]string, 0, len(copied.columns)-len(targets))
+	for _, column := range dic {
+		if m[column] == nil {
+			continue
+		}
+		sorted = append(sorted, *m[column])
+	}
+
+	copied.columns = sorted
+	return copied
+}
+
 // db・tableタグを見て、FieldをSelect対象としてSet
 func (builder *queryBuilder) model(model interface{}, notIgnoreZeroValue ...bool) *queryBuilder {
 	if notIgnoreZeroValue != nil && notIgnoreZeroValue[0] {
@@ -113,6 +143,22 @@ func (builder *queryBuilder) where(column, operator string, bind ...string) *que
 		"column":   column,
 		"operator": operator,
 		"bind":     bd,
+		"logical":  "AND",
+	})
+	return copied
+}
+
+func (builder *queryBuilder) or(column, operator string, bind ...string) *queryBuilder {
+	copied := builder.copy()
+	bd := column
+	if len(bind) != 0 {
+		bd = bind[0]
+	}
+	copied.whereConditions = append(copied.whereConditions, map[string]string{
+		"column":   column,
+		"operator": operator,
+		"bind":     bd,
+		"logical":  "OR",
 	})
 	return copied
 }
@@ -130,6 +176,7 @@ func (builder *queryBuilder) whereIn(column string, listLength int, bind ...stri
 		"listLength": strconv.Itoa(listLength),
 		"operator":   In,
 		"bind":       bd,
+		"logical":    "AND",
 	})
 	return copied
 }
@@ -145,6 +192,7 @@ func (builder *queryBuilder) whereNotIn(column string, listLength int, bind ...s
 		"listLength": strconv.Itoa(listLength),
 		"operator":   NotIn,
 		"bind":       bd,
+		"logical":    "AND",
 	})
 	return copied
 }
@@ -181,6 +229,7 @@ func (builder *queryBuilder) whereSubQuery(column, operator string, subQueryBuil
 		"column":   column,
 		"operator": operator,
 		"subQuery": strings.TrimRight(subQueryBuilder.Build(), ";"),
+		"logical":  "AND",
 	})
 	return copied
 }
@@ -198,7 +247,7 @@ func (builder *queryBuilder) copy() *queryBuilder {
 
 func (builder *queryBuilder) getWhereParagraphs() []string {
 	paragraphs := make([]string, 0, 0)
-	paragraphs = append(paragraphs, "WHERE")
+	//paragraphs = append(paragraphs, "WHERE")
 
 	for index, condition := range builder.whereConditions {
 		op := condition["operator"]
@@ -214,11 +263,11 @@ func (builder *queryBuilder) getWhereParagraphs() []string {
 			}
 		}
 
-		paragraph := builder.getWhereParagraph(condition, bind)
-
-		if index == len(builder.whereConditions)-1 {
-			paragraph = strings.TrimRight(paragraph, " AND")
+		if index == 0 {
+			condition["logical"] = "WHERE"
 		}
+
+		paragraph := builder.getWhereParagraph(condition, bind)
 
 		paragraphs = append(paragraphs, paragraph)
 	}
@@ -226,18 +275,19 @@ func (builder *queryBuilder) getWhereParagraphs() []string {
 }
 
 func (builder *queryBuilder) getWhereParagraph(condition map[string]string, bind string) string {
-	baseFormat := "%s %s %s AND"
+	logical := condition["logical"]
+	baseFormat := logical + " %s %s %s"
 	column := condition["column"]
 	op := condition["operator"]
 	sub := condition["subQuery"]
 
 	if sub != "" {
-		return fmt.Sprintf("%s %s (%s)", column, op, sub)
+		return fmt.Sprintf("%s %s %s (%s)", logical, column, op, sub)
 	}
 
 	switch op {
 	case IsNull, IsNotNull:
-		return fmt.Sprintf("%s %s AND", column, op)
+		return fmt.Sprintf("%s %s %s", logical, column, op)
 	case In, NotIn:
 		listLength, _ := strconv.Atoi(condition["listLength"])
 		return fmt.Sprintf(baseFormat, column, op, builder.buildListBind(bind, listLength))
