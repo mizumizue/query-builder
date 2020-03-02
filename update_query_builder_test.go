@@ -20,7 +20,29 @@ func Test_UpdateQueryBuilder_Model(t *testing.T) {
 		"UPDATE users SET user_id = ?, name = ?, age = ?, sex = ?;",
 		NewUpdateQueryBuilder().
 			Table("users").
-			Model(User{Name: "hoge"}, true).
+			Model(User{}, true).
+			Build(),
+		true,
+	)
+
+	testCommonFunc(
+		t,
+		"UPDATE users SET name = ?, age = ?, sex = ?;",
+		NewUpdateQueryBuilder().
+			Table("users").
+			Model(&User{}, true).
+			Omit("user_id").
+			Build(),
+		true,
+	)
+
+	testCommonFunc(
+		t,
+		"UPDATE users SET user_id = ?, name = ?, age = ?;",
+		NewUpdateQueryBuilder().
+			Table("users").
+			Model(&User{}, true).
+			Omit("sex").
 			Build(),
 		true,
 	)

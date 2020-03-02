@@ -49,6 +49,36 @@ func (builder *queryBuilder) column(columns ...string) *queryBuilder {
 	return copied
 }
 
+func (builder *queryBuilder) omit(targets ...string) *queryBuilder {
+	copied := builder.copy()
+	dic := make([]string, 0, len(copied.columns))
+	m := make(map[string]*string)
+
+	for _, column := range copied.columns {
+		np := column
+		m[column] = &np
+		dic = append(dic, column)
+	}
+
+	for _, target := range targets {
+		if m[target] == nil {
+			continue
+		}
+		delete(m, target)
+	}
+
+	sorted := make([]string, 0, len(copied.columns)-len(targets))
+	for _, column := range dic {
+		if m[column] == nil {
+			continue
+		}
+		sorted = append(sorted, *m[column])
+	}
+
+	copied.columns = sorted
+	return copied
+}
+
 // db・tableタグを見て、FieldをSelect対象としてSet
 func (builder *queryBuilder) model(model interface{}, notIgnoreZeroValue ...bool) *queryBuilder {
 	if notIgnoreZeroValue != nil && notIgnoreZeroValue[0] {

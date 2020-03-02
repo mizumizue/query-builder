@@ -46,6 +46,12 @@ func (builder *UpdateQueryBuilder) Column(columns ...string) *UpdateQueryBuilder
 	return copied
 }
 
+func (builder *UpdateQueryBuilder) Omit(columns ...string) *UpdateQueryBuilder {
+	copied := builder.copy()
+	copied.queryBuilder = builder.omit(columns...)
+	return copied
+}
+
 func (builder *UpdateQueryBuilder) Where(column, operator string, bind ...string) *UpdateQueryBuilder {
 	copied := builder.copy()
 	copied.queryBuilder = builder.where(column, operator, bind...)
