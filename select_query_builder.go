@@ -19,7 +19,7 @@ type SelectQueryBuilder struct {
 
 func NewSelectQueryBuilder() *SelectQueryBuilder {
 	builder := &SelectQueryBuilder{}
-	builder.queryBuilder = &queryBuilder{}
+	builder.queryBuilder = newQueryBuilder()
 	builder.placeholderType = Question
 	return builder
 }
@@ -51,7 +51,7 @@ func (builder *SelectQueryBuilder) Table(tableName string) *SelectQueryBuilder {
 
 func (builder *SelectQueryBuilder) Model(src interface{}) *SelectQueryBuilder {
 	copied := builder.copy()
-	copied.queryBuilder = builder.model(src)
+	copied.queryBuilder = builder.model(src, true)
 	return copied
 }
 
