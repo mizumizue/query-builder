@@ -36,34 +36,24 @@ func Test_InsertQueryBuilder_Column(t *testing.T) {
 }
 
 func Test_InsertQueryBuilder_Model(t *testing.T) {
-	q := NewInsertQueryBuilder().
-		Table("users").
-		Model(User{}).
-		Build()
+	testCommonFunc(
+		t,
+		"INSERT INTO users(user_id, name, age, sex) VALUES(?, ?, ?, ?);",
+		NewInsertQueryBuilder().
+			Table("users").
+			Model(User{}, true).
+			Build(),
+		true,
+	)
 
-	expected := "INSERT INTO users(user_id, name, age, sex) VALUES(?, ?, ?, ?);"
-	if err := checkQuery(expected, q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-
-	q2 := NewInsertQueryBuilder().
-		Placeholder(Named).
-		Table("users").
-		Model(User{}).
-		Build()
-
-	expected2 := "INSERT INTO users(user_id, name, age, sex) VALUES(:user_id, :name, :age, :sex);"
-	if err := checkQuery(expected2, q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
-	if err := checkSqlSyntax(q2); err != nil {
-		t.Log(err)
-		t.Fail()
-	}
+	testCommonFunc(
+		t,
+		"INSERT INTO users(name) VALUES(:name);",
+		NewInsertQueryBuilder().
+			Placeholder(Named).
+			Table("users").
+			Model(User{Name: "hoge"}).
+			Build(),
+		true,
+	)
 }
