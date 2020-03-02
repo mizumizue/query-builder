@@ -88,6 +88,12 @@ func (builder *SelectQueryBuilder) Where(column, operator string, bind ...string
 	return copied
 }
 
+func (builder *SelectQueryBuilder) Or(column, operator string, bind ...string) *SelectQueryBuilder {
+	copied := builder.copy()
+	copied.queryBuilder = builder.or(column, operator, bind...)
+	return copied
+}
+
 func (builder *SelectQueryBuilder) WhereIn(column string, listLength int, bind ...string) *SelectQueryBuilder {
 	copied := builder.copy()
 	copied.queryBuilder = builder.whereIn(column, listLength, bind...)

@@ -358,6 +358,20 @@ func Test_SelectQueryBuilder_Where(t *testing.T) {
 	)
 }
 
+func Test_SelectQueryBuilder_OR(t *testing.T) {
+	// ? bind
+	testCommonFunc(
+		t,
+		"SELECT users.* FROM users WHERE name = ? OR name = ?;",
+		NewSelectQueryBuilder().
+			Table("users").
+			Where("name", Equal).
+			Or("name", Equal).
+			Build(),
+		true,
+	)
+}
+
 func Test_SelectQueryBuilder_WhereIn(t *testing.T) {
 	q := NewSelectQueryBuilder().
 		Table("users").
