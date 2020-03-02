@@ -46,6 +46,12 @@ func (builder *InsertQueryBuilder) Column(columns ...string) *InsertQueryBuilder
 	return copied
 }
 
+func (builder *InsertQueryBuilder) Omit(columns ...string) *InsertQueryBuilder {
+	copied := builder.copy()
+	copied.queryBuilder = builder.omit(columns...)
+	return copied
+}
+
 func (builder *InsertQueryBuilder) Build() string {
 	if builder.tableName == "" {
 		panic("target table is empty!!!")
