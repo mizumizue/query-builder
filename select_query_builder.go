@@ -49,6 +49,12 @@ func (builder *SelectQueryBuilder) Table(tableName string) *SelectQueryBuilder {
 	return copied
 }
 
+func (builder *SelectQueryBuilder) Distinct() *SelectQueryBuilder {
+	copied := builder.copy()
+	copied.queryBuilder = builder.distinct()
+	return copied
+}
+
 func (builder *SelectQueryBuilder) Model(src interface{}) *SelectQueryBuilder {
 	copied := builder.copy()
 	copied.queryBuilder = builder.model(src, true)
@@ -210,6 +216,10 @@ func (builder *SelectQueryBuilder) Build() string {
 func (builder *SelectQueryBuilder) getSelectParagraphs(tableName string, columns []string) []string {
 	paragraphs := make([]string, 0, 0)
 	paragraphs = append(paragraphs, "SELECT")
+
+	if builder.isDistinct {
+		paragraphs = append(paragraphs, "DISTINCT")
+	}
 
 	if len(columns) == 0 {
 		paragraphs = append(paragraphs, tableName+".*")
