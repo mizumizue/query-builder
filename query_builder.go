@@ -17,6 +17,7 @@ type queryBuilder struct {
 	query           []string
 	tableName       string
 	columns         []string
+	isDistinct      bool
 	whereConditions []map[string]string
 	placeholderType int
 	argNum          int
@@ -46,6 +47,12 @@ func (builder *queryBuilder) column(columns ...string) *queryBuilder {
 	for _, column := range columns {
 		copied.columns = append(copied.columns, column)
 	}
+	return copied
+}
+
+func (builder *queryBuilder) distinct() *queryBuilder {
+	copied := builder.copy()
+	copied.isDistinct = true
 	return copied
 }
 
@@ -239,6 +246,7 @@ func (builder *queryBuilder) copy() *queryBuilder {
 		query:           builder.query,
 		tableName:       builder.tableName,
 		columns:         builder.columns,
+		isDistinct:      builder.isDistinct,
 		whereConditions: builder.whereConditions,
 		placeholderType: builder.placeholderType,
 		ignoreZeroValue: builder.ignoreZeroValue,

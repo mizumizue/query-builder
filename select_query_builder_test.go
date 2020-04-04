@@ -22,6 +22,15 @@ func Test_SelectQueryBuilder_OnlyTable(t *testing.T) {
 	)
 }
 
+func Test_SelectQueryBuilder_Distinct(t *testing.T) {
+	testCommonFunc(
+		t,
+		"SELECT DISTINCT users.* FROM users;",
+		NewSelectQueryBuilder().Distinct().Table("users").Build(),
+		true,
+	)
+}
+
 func Test_SelectQueryBuilder_Model(t *testing.T) {
 	testCommonFunc(
 		t,
